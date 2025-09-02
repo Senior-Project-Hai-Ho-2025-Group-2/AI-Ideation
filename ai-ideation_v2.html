@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Ideation</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 20px;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border-radius: 5px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="text"],
+        select,
+        input[type="number"] {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin-bottom: 16px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .api-key-container, .url-container, .model-container {
+            display: none;
+            margin-bottom: 16px;
+        }
+        button {
+            padding: 12px 24px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .results {
+            margin-top: 32px;
+        }
+        .project {
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 16px;
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AI Ideation</h1>
+        <form id="problemForm">
+            <label for="modelUrl">Model URL (for Self-Hosted):</label>
+            <input type="text" id="modelUrl" name="modelUrl" required onblur="fetchModels()">
+            
+            <div class="model-container" id="modelContainer">
+                <label for="model">Select Model:</label>
+                <select id="model" name="model" required onchange="showApiKeyContainer(this.value)">
+                    <!-- Models will be populated here dynamically -->
+                </select>
+            </div>
+
+            <div class="api-key-container" id="apiKeyContainer">
+                <label for="apiKey">API Key:</label>
+                <input type="text" id="apiKey" name="apiKey" required>
+            </div>
+
+            <label for="problem">Problem Statement:</label>
+            <input type="text" id="problem" name="problem" required>
+            
+            <button type="submit">Get Solutions</button>
+        </form>
+        
+        <div class="results" id="results"></div>
+    </div>
+
+    <script>
+        function showApiKeyContainer(model) {
+            const apiKeyContainer = document.getElementById('apiKeyContainer');
+
+            if (model === 'self-hosted-model') {
+                apiKeyContainer.style.display = 'none';
+            } else {
+                apiKeyContainer.style.display = 'block';
+            }
+        }
+
+        async function fetchModels() {
+            const modelUrlInput = document.getElementById('modelUrl');
+            const modelUrl = modelUrlInput.value;
+            
+            // Validate URL format
+            const urlPattern = /^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$/;
+            if (!urlPattern.test(modelUrl)) {
+                alert("Invalid URL. Please use the format: http://100.112.226.102:11434");
+                return;
+            }
+
+            try {
+                const response = await fetch(`${modelUrl}/api/tags`);
+                if (!response.ok) throw new Error("Failed to fetch models");
+                const data = await response.json();
+                
+                const modelSelect = document.getElementById('model');
+                modelSelect.innerHTML = ''; // Clear existing options
+                data.models.forEach(model => {
+                    const option = document.createElement('option');
+                    option.value = model.name;
+                    option.textContent = model.name;
+                    modelSelect.appendChild(option);
+                });
+
+                showApiKeyContainer('self-hosted-model');
+
+                // Hide the URL and model containers, show the API key container if needed
+                document.getElementById('modelUrl').parentElement.style.display = 'none';
+                document.getElementById('modelContainer').style.display = 'block';
+
+            } catch (error) {
+                console.error("Error fetching models:", error);
+                alert("Failed to fetch models. Please check the URL.");
+            }
+        }
+
+        document.getElementById('problemForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            const apiKey = document.getElementById('apiKey').value || null;
+            const modelUrl = document.getElementById('modelUrl').value;
+            const model = document.getElementById('model').value;
+            const problem = document.getElementById('problem').value;
+            
+            fetch(`${modelUrl}/api/chat`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    model,
+                    messages: [
+                        {
+                            role: "user",
+                            content: `Come up with possible engineering projects that serve as solutions for the following problem statement: ${problem}.`
+                        }
+                    ]
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                const resultsDiv = document.getElementById('results');
+                resultsDiv.innerHTML = '';
+                
+                data.choices[0].message.content.split('\n').forEach(line => {
+                    if (line.trim() !== '') {
+                        const projectDiv = document.createElement('div');
+                        projectDiv.className = 'project';
+                        
+                        const projectName = document.createElement('h3');
+                        projectName.textContent = line;
+                        
+                        resultsDiv.appendChild(projectName);
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert("Failed to get solutions. Please check the URL and try again.");
+            });
+        });
+    </script>
+</body>
+</html>
