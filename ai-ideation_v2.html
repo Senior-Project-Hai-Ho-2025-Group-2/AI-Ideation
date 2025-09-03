@@ -60,19 +60,28 @@
     <div class="container">
         <h1>AI Ideation</h1>
         <form id="problemForm">
-            <label for="modelUrl">Model URL (for Self-Hosted):</label>
-            <input type="text" id="modelUrl" name="modelUrl" required onblur="fetchModels()">
-            
-            <div class="model-container" id="modelContainer">
-                <label for="model">Select Model:</label>
-                <select id="model" name="model" required onchange="showApiKeyContainer(this.value)">
-                    <!-- Models will be populated here dynamically -->
-                </select>
-            </div>
+            <label for="model">Select Model:</label>
+            <select id="model" name="model" required onchange="handleModelChange(this.value)">
+                <option value="">Choose a model type...</option>
+                <option value="openai-gpt-3.5-turbo">OpenAI GPT-3.5-Turbo</option>
+                <option value="self-hosted-model">Self-Hosted Model</option>
+            </select>
 
             <div class="api-key-container" id="apiKeyContainer">
                 <label for="apiKey">API Key:</label>
                 <input type="text" id="apiKey" name="apiKey" required>
+            </div>
+
+            <div class="url-container" id="urlContainer">
+                <label for="modelUrl">Model URL (for Self-Hosted):</label>
+                <input type="text" id="modelUrl" name="modelUrl" required onblur="fetchModels()">
+                
+                <div class="model-container" id="modelContainer">
+                    <label for="model">Select Model:</label>
+                    <select id="model" name="model" required onchange="showApiKeyContainer(this.value)">
+                        <!-- Models will be populated here dynamically -->
+                    </select>
+                </div>
             </div>
 
             <label for="problem">Problem Statement:</label>
@@ -85,13 +94,33 @@
     </div>
 
     <script>
+        function handleModelChange(modelType) {
+            const apiKeyContainer = document.getElementById('apiKeyContainer');
+            const urlContainer = document.getElementById('urlContainer');
+            const modelContainer = document.getElementById('modelContainer');
+
+            if (modelType === 'openai-gpt-3.5-turbo') {
+                apiKeyContainer.style.display = 'block';
+                urlContainer.style.display = 'none';
+                modelContainer.style.display = 'none';
+            } else if (modelType === 'self-hosted-model') {
+                apiKeyContainer.style.display = 'none';
+                urlContainer.style.display = 'block';
+                modelContainer.style.display = 'none';
+            } else {
+                apiKeyContainer.style.display = 'none';
+                urlContainer.style.display = 'none';
+                modelContainer.style.display = 'none';
+            }
+        }
+
         function showApiKeyContainer(model) {
             const apiKeyContainer = document.getElementById('apiKeyContainer');
 
             if (model === 'self-hosted-model') {
-                apiKeyContainer.style.display = 'none';
-            } else {
                 apiKeyContainer.style.display = 'block';
+            } else {
+                apiKeyContainer.style.display = 'none';
             }
         }
 
@@ -121,11 +150,6 @@
                 });
 
                 showApiKeyContainer('self-hosted-model');
-
-                // Hide the URL and model containers, show the API key container if needed
-                document.getElementById('modelUrl').parentElement.style.display = 'none';
-                document.getElementById('modelContainer').style.display = 'block';
-
             } catch (error) {
                 console.error("Error fetching models:", error);
                 alert("Failed to fetch models. Please check the URL.");
@@ -136,46 +160,88 @@
             event.preventDefault();
             
             const apiKey = document.getElementById('apiKey').value || null;
-            const modelUrl = document.getElementById('modelUrl').value;
+            const modelUrl = document.getElementById('modelUrl').value || null;
             const model = document.getElementById('model').value;
             const problem = document.getElementById('problem').value;
             
-            fetch(`${modelUrl}/api/chat`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    model,
-                    messages: [
-                        {
-                            role: "user",
-                            content: `Come up with possible engineering projects that serve as solutions for the following problem statement: ${problem}.`
-                        }
-                    ]
+            if (model === 'self-hosted-model') {
+                fetch(`${modelUrl}/api/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        model,
+                        messages: [
+                            {
+                                role: "user",
+                                content: `Come up with possible engineering projects that serve as solutions for the following problem statement: ${problem}.`
+                            }
+                        ]
+                    })
                 })
-            })
-            .then(response => response.json())
-            .then(data => {
-                const resultsDiv = document.getElementById('results');
-                resultsDiv.innerHTML = '';
-                
-                data.choices[0].message.content.split('\n').forEach(line => {
-                    if (line.trim() !== '') {
-                        const projectDiv = document.createElement('div');
-                        projectDiv.className = 'project';
-                        
-                        const projectName = document.createElement('h3');
-                        projectName.textContent = line;
-                        
-                        resultsDiv.appendChild(projectName);
-                    }
+                .then(response => response.json())
+                .then(data => {
+                    const resultsDiv = document.getElementById('results');
+                    resultsDiv.innerHTML = '';
+                    
+                    data.choices[0].message.content.split('\n').forEach(line => {
+                        if (line.trim() !== '') {
+                            const projectDiv = document.createElement('div');
+                            projectDiv.className = 'project';
+                            
+                            const projectName = document.createElement('h3');
+                            projectName.textContent = line;
+                            
+                            resultsDiv.appendChild(projectName);
+                        }
+                    });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert("Failed to get solutions. Please check the URL and try again.");
                 });
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert("Failed to get solutions. Please check the URL and try again.");
-            });
+            } else if (model === 'openai-gpt-3.5-turbo') {
+                fetch('https://api.openai.com/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model,
+                        messages: [
+                            {
+                                role: "user",
+                                content: `Come up with possible engineering projects that serve as solutions for the following problem statement: ${problem}.`
+                            }
+                        ]
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const resultsDiv = document.getElementById('results');
+                    resultsDiv.innerHTML = '';
+                    
+                    data.choices[0].message.content.split('\n').forEach(line => {
+                        if (line.trim() !== '') {
+                            const projectDiv = document.createElement('div');
+                            projectDiv.className = 'project';
+                            
+                            const projectName = document.createElement('h3');
+                            projectName.textContent = line;
+                            
+                            resultsDiv.appendChild(projectName);
+                        }
+                    });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert("Failed to get solutions. Please check the API key and try again.");
+                });
+            } else {
+                alert("Please select a model type.");
+            }
         });
     </script>
 </body>
