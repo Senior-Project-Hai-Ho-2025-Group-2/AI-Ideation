@@ -2,253 +2,314 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>AI Ideation</title>
+<title>AI Ideation – Structured Prompt</title>
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
 <style>
-  body{font-family:Arial,sans-serif;background:#f4f4f9;margin:0;padding:0;}
-  .container{max-width:600px;margin:40px auto;padding:20px;background:#fff;box-shadow:0 4px 8px rgba(0,0,0,.1);border-radius:5px;}
-  h1{font-size:1.8em;margin-bottom:20px;color:#333;}
-  label{display:block;margin:12px 0 4px;font-weight:600;color:#555;}
-  select,input{width:100%;padding:10px;border:1px solid #ddd;border-radius:4px;}
-  .hidden{display:none;}
-  button{margin-top:20px;padding:12px 24px;background:#4CAF50;color:#fff;border:none;border-radius:4px;cursor:pointer;}
-  .results{margin-top:32px;}
-  .project{border-bottom:1px solid #ddd;padding:12px 0;}
-  #log{margin-top:24px;background:#f0f0f0;padding:8px;border-radius:4px;font-family:monospace;font-size:0.9em;height:120px;overflow:auto;}
-  #spinner{display:none;margin:12px auto;width:24px;height:24px;border:4px solid #4CAF50;border-top:4px solid transparent;border-radius:50%;animation:spin 1s linear infinite;}
+  body{font-family:'Inter',Arial,sans-serif;background:#f7fafc;}
+  .card{background:#fff;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,.05);padding:1.5rem;}
+  .card-header{display:flex;align-items:center;gap:0.75rem;margin-bottom:1rem;}
+  .card-header h2{font-size:1.5rem;font-weight:600;color:#2d3748;}
+  .input{width:100%;padding:0.75rem;border:1px solid #cbd5e0;border-radius:8px;transition:border-color 0.2s;}
+  .input:focus{border-color:#667eea;outline:none;}
+  .select{width:100%;padding:0.75rem;border:1px solid #cbd5e0;border-radius:8px;background:#fff;}
+  .btn{display:inline-flex;align-items:center;gap:0.5rem;background:#667eea;color:#fff;padding:0.75rem 1.5rem;border-radius:8px;cursor:pointer;transition:background 0.2s;}
+  .btn:hover{background:#5a67d8;}
+  .spinner{margin:auto;border:4px solid #cbd5e0;border-top:4px solid #667eea;border-radius:50%;width:36px;height:36px;animation:spin 1s linear infinite;}
   @keyframes spin{to{transform:rotate(360deg)}}
+  .log{background:#e2e8f0;font-family:monospace;font-size:0.875rem;padding:0.75rem;border-radius:8px;height:140px;overflow:auto;}
+  .section{margin-bottom:1.5rem;}
+  .section:last-child{margin-bottom:0;}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
 </style>
 </head>
-<body>
-<div class="container">
-  <h1>AI Ideation</h1>
-  <form id="problemForm">
-    <label for="modelType">Select Model Type:</label>
-    <select id="modelType" required onchange="handleModelType()">
-      <option value="">-- choose --</option>
-      <option value="openai">OpenAI</option>
-      <option value="selfhosted">Self‑Hosted</option>
-    </select>
+<body class="min-h-screen py-8 px-4 md:px-0">
+<div class="max-w-4xl mx-auto">
 
-    <div id="apiKeyField" class="hidden">
-      <label for="apiKey">OpenAI API Key:</label>
-      <input type="text" id="apiKey" placeholder="sk-..." autocomplete="off">
+  <!-- Header card -->
+  <div class="card mb-6">
+    <div class="card-header">
+      <i class="fas fa-lightbulb text-2xl text-indigo-600"></i>
+      <h2>AI Ideation – Structured Prompt</h2>
     </div>
+    <p class="text-gray-600">Generate project ideas that match your constraints and budget.</p>
+  </div>
 
-    <div id="urlField" class="hidden">
-      <label for="modelUrl">Self‑Hosted Base URL:</label>
-      <input type="text" id="modelUrl" placeholder="http://192.168.1.10:11434" autocomplete="off" onblur="fetchModels()">
-    </div>
+  <!-- Main form -->
+  <div class="card mb-6">
+    <form id="problemForm">
 
-    <div id="modelSelectField" class="hidden">
-      <label for="modelSelect">Select Model:</label>
-      <select id="modelSelect" required></select>
-    </div>
+      <!-- Model selection -->
+      <div class="section">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Select Model Type:</label>
+        <select id="modelType" required onchange="handleModelType()" class="select">
+          <option value="">-- choose --</option>
+          <option value="openai">OpenAI</option>
+          <option value="selfhosted">Self‑Hosted</option>
+        </select>
+      </div>
 
-    <label for="problem">Problem Statement:</label>
-    <input type="text" id="problem" placeholder="Describe your problem..." required>
+      <!-- OpenAI API key -->
+      <div id="apiKeyField" class="section hidden">
+        <label class="block text-sm font-medium text-gray-700 mb-1">OpenAI API Key:</label>
+        <input type="text" id="apiKey" class="input" placeholder="sk-…" autocomplete="off">
+      </div>
 
-    <label for="budget">Budget (USD):</label>
-    <input type="number" id="budget" min="0" placeholder="e.g., 5000" required>
+      <!-- Self‑hosted URL -->
+      <div id="urlField" class="section hidden">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Self‑Hosted Base URL:</label>
+        <input type="text" id="modelUrl" class="input" placeholder="http://192.168.1.10:11434" autocomplete="off" onblur="fetchModels()">
+      </div>
 
-    <button type="submit">Get Solutions</button>
-  </form>
+      <!-- Model dropdown -->
+      <div id="modelSelectField" class="section hidden">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Select Model:</label>
+        <select id="modelSelect" required class="select"></select>
+      </div>
 
-  <div id="spinner"></div>
-  <div class="results" id="results"></div>
-  <h2>Log</h2>
-  <pre id="log"></pre>
+      <!-- Problem statement -->
+      <div class="section">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Problem Statement:</label>
+        <input type="text" id="problem" class="input" placeholder="Describe your problem…" required>
+      </div>
+
+      <!-- Technology check‑boxes -->
+      <div class="section">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Preferred Technologies:</label>
+        <div class="grid-2">
+          <label class="flex items-center"><input type="checkbox" id="tech-ai" class="mr-2"><span>AI/ML</span></label>
+          <label class="flex items-center"><input type="checkbox" id="tech-iot" class="mr-2"><span>IoT</span></label>
+          <label class="flex items-center"><input type="checkbox" id="tech-mobile" class="mr-2"><span>Mobile</span></label>
+          <label class="flex items-center"><input type="checkbox" id="tech-web" class="mr-2"><span>Web</span></label>
+          <label class="flex items-center"><input type="checkbox" id="tech-embedded" class="mr-2"><span>Embedded</span></label>
+          <label class="flex items-center"><input type="checkbox" id="tech-robotics" class="mr-2"><span>Robotics</span></label>
+          <label class="flex items-center"><input type="checkbox" id="tech-control" class="mr-2"><span>Control</span></label>
+          <label class="flex items-center"><input type="checkbox" id="tech-security" class="mr-2"><span>Cybersecurity</span></label>
+        </div>
+      </div>
+
+      <!-- Innovation slider -->
+      <div class="section">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Innovation Level (1‑10):</label>
+        <input type="range" id="innovationLevel" min="1" max="10" value="5" class="innovation-slider w-full">
+        <div class="flex justify-between text-xs text-gray-500 mt-1"><span>Low Risk</span><span>High Innovation</span></div>
+      </div>
+
+      <!-- Complexity -->
+      <div class="section">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Complexity:</label>
+        <select id="complexity" class="select">
+          <option value="beginner">Beginner</option>
+          <option value="intermediate">Intermediate</option>
+          <option value="advanced">Advanced</option>
+        </select>
+      </div>
+
+      <!-- Budget -->
+      <div class="section">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Budget (USD):</label>
+        <input type="number" id="budgetInput" min="0" placeholder="e.g., 5000" class="input" required>
+      </div>
+
+      <div class="section text-right">
+        <button type="submit" class="btn"><i class="fas fa-magic"></i><span>Generate Project Ideas</span></button>
+      </div>
+
+    </form>
+  </div>
+
+  <!-- Results card -->
+  <div id="resultsContainer" class="card mb-6">
+    <div id="spinner" class="spinner hidden"></div>
+    <div id="results"></div>
+  </div>
+
+  <!-- Log card -->
+  <div class="card">
+    <label class="block text-sm font-medium text-gray-700 mb-1">Log</label>
+    <pre id="log" class="log"></pre>
+  </div>
+
 </div>
+</body>
 
 <script>
-/* ---------- Utility helpers ---------- */
-function log(msg) {
-  console.log(msg);
-  const logEl = document.getElementById('log');
-  logEl.textContent += msg + '\n';
-  logEl.scrollTop = logEl.scrollHeight;
-}
-function showSpinner(show) { document.getElementById('spinner').style.display = show ? 'block' : 'none'; }
+/* ---------- Logging helpers ---------- */
+function log(msg){ console.log(msg); const logEl=document.getElementById('log'); logEl.textContent+=msg+'\n'; logEl.scrollTop=logEl.scrollHeight; }
+function showSpinner(show){ document.getElementById('spinner').style.display=show?'block':'none'; }
 
-/* ---------- Field visibility logic ---------- */
-function handleModelType() {
-  const type = document.getElementById('modelType').value;
-  const apiField   = document.getElementById('apiKeyField');
-  const urlField   = document.getElementById('urlField');
-  const modelField = document.getElementById('modelSelectField');
-
-  apiField.classList.add('hidden'); urlField.classList.add('hidden'); modelField.classList.add('hidden');
-
-  if (type === 'openai') {
-    apiField.classList.remove('hidden');
-    document.getElementById('modelSelect').innerHTML = '<option value="gpt-3.5-turbo">gpt-3.5-turbo</option>';
-    modelField.classList.remove('hidden');
-    log('Model type: OpenAI; default model set to gpt‑3.5‑turbo');
-  } else if (type === 'selfhosted') {
-    urlField.classList.remove('hidden');
-    log('Model type: Self‑Hosted; waiting for URL to fetch models');
+/* ---------- UI visibility ---------- */
+function handleModelType(){
+  const type=document.getElementById('modelType').value;
+  document.getElementById('apiKeyField').classList.toggle('hidden', type!=='openai');
+  document.getElementById('urlField').classList.toggle('hidden', type!=='selfhosted');
+  if(type==='openai'){
+    document.getElementById('modelSelect').innerHTML='<option value="gpt-3.5-turbo">gpt‑3.5‑turbo</option>';
+    document.getElementById('modelSelectField').classList.remove('hidden');
   }
 }
 
-/* ---------- Fetch models from self‑hosted server ---------- */
-async function fetchModels() {
-  const url = document.getElementById('modelUrl').value.trim();
-  if (!url) return;
-  const urlPattern = /^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$/;
-  if (!urlPattern.test(url)) {
-    alert('Please enter a valid URL (e.g., http://192.168.1.10:11434)');
-    return;
-  }
-
+/* ---------- Fetch self‑hosted models ---------- */
+async function fetchModels(){
+  const url=document.getElementById('modelUrl').value.trim();
+  if(!url)return;
+  const urlPattern=/^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$/;
+  if(!urlPattern.test(url)){ alert('Enter a valid URL'); return; }
   log(`Fetching models from ${url}/api/tags`);
   showSpinner(true);
-  try {
-    const resp = await fetch(`${url}/api/tags`);
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const data = await resp.json();
-
-    const select = document.getElementById('modelSelect');
-    select.innerHTML = '';
-    data.models.forEach(m => {
-      const opt = document.createElement('option');
-      opt.value = m.name;
-      opt.textContent = m.name;
-      select.appendChild(opt);
+  try{
+    const resp=await fetch(`${url}/api/tags`);
+    if(!resp.ok)throw new Error(`HTTP ${resp.status}`);
+    const data=await resp.json();
+    const select=document.getElementById('modelSelect');
+    select.innerHTML='';
+    data.models.forEach(m=>{
+      const opt=document.createElement('option'); opt.value=m.name; opt.textContent=m.name; select.appendChild(opt);
     });
-
     document.getElementById('modelSelectField').classList.remove('hidden');
-    log(`Fetched ${data.models.length} models: ${data.models.map(m=>m.name).join(', ')}`);
-  } catch (err) {
-    console.error(err);
-    log(`Error fetching models: ${err.message}`);
-    alert('Could not fetch models. Check the URL and try again.');
-  } finally { showSpinner(false); }
+    log(`Fetched ${data.models.length} models`);
+  }catch(err){ console.error(err); log(`Error fetching models: ${err.message}`); alert('Could not fetch models'); }
+  finally{ showSpinner(false); }
 }
 
-/* ---------- Stream handling with <think> logic ---------- */
-let thinkBuffer = '';          // accumulated text since last <think>
-let waitingForThink = false;   // true after we saw a <think>
-let fullDisplayed = '';        // what we have shown so far
+/* ---------- Prompt builder (unchanged except for JSON‑only instruction) ---------- */
+function buildPrompt(params){
+  const innovation=document.getElementById('innovationLevel').value;
+  return `
+You are a senior‑design project generator. Output your responses in markdown format.
 
-function flushThinkedText() {
-  if (thinkBuffer) {
-    fullDisplayed += thinkBuffer;
-    document.getElementById('results').innerHTML =
-      `<div class="project"><p>${fullDisplayed}</p></div>`;
-    log(`Displayed text block (${thinkBuffer.length} chars)`);
-    thinkBuffer = '';
-  }
+For each project include:
+- title
+- description
+- components
+- technologies
+- cost
+- timeline
+- market
+- challenges
+- value
+
+Team: 4 students, 2 semesters (8‑9 months)  
+Budget: $${params.budget}  
+Complexity: ${params.complexity}  
+Innovation Level: ${innovation}/10  
+${params.problemStatement ? `Problem: ${params.problemStatement}` : ''}  
+${params.technologies.length ? `Technologies: ${params.technologies.join(', ')}` : ''}
+`;
 }
 
-function handleChunkContent(content) {
-  // Append new content to buffer
-  thinkBuffer += content;
+/* ---------- Stream‑JSON helper – extracts the "content" field from each JSON object ---------- */
+async function streamJSON(reader, decoder, onContent, onDone){
+  let buffer='';
+  while(true){
+    const {value,done}=await reader.read();
+    if(done) break;
+    buffer+=decoder.decode(value,{stream:true});
 
-  // Process every <think> tag that appears
-  while (thinkBuffer.includes('<think>')) {
-    const idx = thinkBuffer.indexOf('<think>');
-    if (waitingForThink) {
-      // We had a <think> before – display everything up to this new one
-      const toShow = thinkBuffer.slice(0, idx);
-      thinkBuffer = thinkBuffer.slice(idx + '<think>'.length);
-      // Show what we had accumulated
-      fullDisplayed += toShow;
-      document.getElementById('results').innerHTML =
-        `<div class="project"><p>${fullDisplayed}</p></div>`;
-      log(`Flushed block (${toShow.length} chars)`);
-      waitingForThink = false; // now waiting for next <think>
-    } else {
-      // First <think> seen – discard everything before it
-      thinkBuffer = thinkBuffer.slice(idx + '<think>'.length);
-      waitingForThink = true;
-      log('Encountered first <think> – buffering until next');
+    /* try to peel off complete JSON objects */
+    let idx=0;
+    while(true){
+      const start=buffer.indexOf('{',idx);
+      if(start===-1){ buffer=buffer.slice(idx); break; }
+
+      let brace=0;
+      let end=start;
+      for(; end<buffer.length; end++){
+        if(buffer[end]==='{') brace++;
+        else if(buffer[end]==='}') brace--;
+        if(brace===0) break;
+      }
+      if(brace!==0){ // incomplete object – keep it for the next chunk
+        buffer=buffer.slice(start);
+        break;
+      }
+      const jsonStr=buffer.slice(start, end+1);
+      try{
+        const obj=JSON.parse(jsonStr);
+        if(obj.message && typeof obj.message.content==='string'){
+          onContent(obj.message.content);
+        }
+      }catch(e){
+        /* ignore malformed pieces */
+      }
+      idx=end+1;
     }
   }
+  onDone();
 }
 
-/* ---------- Form submission ---------- */
-document.getElementById('problemForm').addEventListener('submit', async e => {
+/* ---------- Submit handler ---------- */
+document.getElementById('problemForm').addEventListener('submit', async e=>{
   e.preventDefault();
-
-  const type    = document.getElementById('modelType').value;
-  const model   = document.getElementById('modelSelect').value;
-  const problem = document.getElementById('problem').value.trim();
-  const budget  = document.getElementById('budget').value.trim();
-
-  if (!model || !problem || !budget) {
-    alert('Please select a model, enter a problem statement, and set a budget.');
-    return;
-  }
+  const type=document.getElementById('modelType').value;
+  const model=document.getElementById('modelSelect').value;
+  const problem=document.getElementById('problem').value.trim();
+  const budget=document.getElementById('budgetInput').value.trim();
+  if(!type||!model||!problem||!budget){ alert('All required fields must be filled.'); return; }
 
   log(`Submitting problem: "${problem}" with budget $${budget} to model "${model}" (${type})`);
   showSpinner(true);
-  const resultsDiv = document.getElementById('results');
-  resultsDiv.innerHTML = '';
-  thinkBuffer = ''; waitingForThink = false; fullDisplayed = '';
+  document.getElementById('results').innerHTML='';
+  const isSelfHosted=type==='selfhosted';
 
-  try {
-    let url, headers;
-    if (type === 'openai') {
-      const apiKey = document.getElementById('apiKey').value.trim();
-      if (!apiKey) { alert('Please provide your OpenAI API key.'); return; }
-      url = 'https://api.openai.com/v1/chat/completions';
-      headers = {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      };
-      log('Using OpenAI endpoint (no streaming in this demo)');
-    } else if (type === 'selfhosted') {
-      const base = document.getElementById('modelUrl').value.trim();
-      url = `${base}/api/chat`;
-      headers = {'Content-Type': 'application/json'};
-      log(`Using self‑hosted endpoint: ${url}`);
-    } else {
-      alert('Please select a model type.');
-      return;
+  try{
+    let url,headers;
+    if(type==='openai'){
+      const apiKey=document.getElementById('apiKey').value.trim();
+      if(!apiKey){ alert('Enter your OpenAI API key.'); return; }
+      url='https://api.openai.com/v1/chat/completions';
+      headers={'Content-Type':'application/json','Authorization':`Bearer ${apiKey}`};
+    }else{
+      const base=document.getElementById('modelUrl').value.trim();
+      url=`${base}/api/chat`;
+      headers={'Content-Type':'application/json'};
     }
 
-    const body = JSON.stringify({
+    /* gather tech params */
+    const techs=[];
+    document.querySelectorAll('input[type="checkbox"]:checked').forEach(cb=>{
+      const txt=cb.parentElement.textContent.trim();
+      if(txt)techs.push(txt);
+    });
+
+    const params={
+      problemStatement:problem,
+      technologies:techs,
+      budget:budget,
+      complexity:document.getElementById('complexity')?document.getElementById('complexity').value:'intermediate'
+    };
+    const prompt=buildPrompt(params);
+
+    const body=JSON.stringify({
       model,
-      messages: [{role:"user", content:`Come up with possible engineering projects that solve: ${problem}. Aim to stay within the budget of $${budget}.`}]
+      messages:[{role:'user', content:prompt}],
+      temperature:0.8,
+      max_tokens:2000
     });
 
     log(`Request body: ${body}`);
-    const resp = await fetch(url, {method:'POST', headers, body});
-    if (!resp.ok) throw new Error(`Request failed (${resp.status})`);
+    const resp=await fetch(isSelfHosted?url:`${url}`,{
+      method:'POST',
+      headers:headers,
+      body:isSelfHosted?body:JSON.stringify({
+        ...JSON.parse(body),
+        response_format:{ type:'json_object' }   // only for OpenAI v4
+      })
+    });
 
-    const decoder = new TextDecoder();
-    const reader  = resp.body.getReader();
+    if(!resp.ok)throw new Error(`API Error: ${resp.status} ${resp.statusText}`);
 
-    // Stream the response, processing <think> tags
-    while (true) {
-      const {value, done} = await reader.read();
-      if (done) break;
-      const chunk = decoder.decode(value, {stream:true});
-      log(`Received chunk (${chunk.length} chars)`);
-      // Ollama streams newline‑delimited JSON objects
-      const parts = chunk.split(/\n/).filter(Boolean);
-      for (const part of parts) {
-        try {
-          const obj = JSON.parse(part);
-          if (obj.message && obj.message.content) {
-            handleChunkContent(obj.message.content);
-          }
-        } catch (e) {
-          log(`Failed to parse chunk: ${part}`);
-        }
-      }
-    }
+    const decoder=new TextDecoder();
+    const reader=resp.body.getReader();
 
-    // Flush anything left after stream ends
-    flushThinkedText();
-    log('Streaming complete');
-  } catch (err) {
-    console.error(err);
-    log(`Error: ${err.message}`);
-    resultsDiv.innerHTML = `<p style="color:red;">Error: ${err.message}</p>`;
-  } finally {
-    showSpinner(false);
-  }
+    /* for any provider – we only stream the content of the message */
+    streamJSON(reader, decoder, chunk=>{
+      document.getElementById('results').innerHTML+=chunk;
+    }, ()=>{
+      showSpinner(false);
+    });
+
+  }catch(err){ console.error(err); log(`Error: ${err.message}`); document.getElementById('results').innerHTML=`<p class="text-red-600">Error: ${err.message}</p>`; showSpinner(false); }
 });
 </script>
-</body>
 </html>

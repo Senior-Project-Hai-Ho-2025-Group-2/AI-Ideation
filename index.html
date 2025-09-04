@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AI Ideation – Structured Prompt</title>
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<!-- Markdown renderer -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body class="min-h-screen py-8 px-4 md:px-0">
+  <div class="max-w-4xl mx-auto">
+
+  <!-- Header card -->
+  <div class="card mb-6">
+    <div class="card-header">
+      <i class="fas fa-lightbulb text-2xl text-indigo-600"></i>
+      <h2>AI Ideation – Structured Prompt</h2>
+    </div>
+    <p class="text-gray-600">Generate project ideas that match your constraints and budget.</p>
+  </div>
+
+  <!-- Main form -->
+  <div class="card mb-6">
+    <form id="problemForm">
+      <!-- Model selection -->
+      <div class="section">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Select Model Type:</label>
+        <select id="modelType" required onchange="handleModelType()" class="select">
+          <option value="">-- choose --</option>
+          <option value="openai">OpenAI</option>
+          <option value="selfhosted">Self‑Hosted</option>
+        </select>
+      </div>
+
+      <!-- OpenAI API key -->
+      <div id="apiKeyField" class="section hidden">
+        <label class="block text-sm font-medium text-gray-700 mb-1">OpenAI API Key:</label>
+        <input type="text" id="apiKey" class="input" placeholder="sk-…" autocomplete="off">
+      </div>
+
+      <!-- Self‑hosted URL -->
+      <div id="urlField" class="section hidden">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Self‑Hosted Base URL:</label>
+        <input type="text" id="modelUrl" class="input" placeholder="http://192.168.1.10:11434" autocomplete="off" onblur="fetchModels()">
+      </div>
+
+      <!-- Model dropdown -->
+      <div id="modelSelectField" class="section hidden">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Select Model:</label>
+        <select id="modelSelect" required class="select"></select>
+      </div>
+
+      <!-- Problem statement -->
+      <div class="section">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Problem Statement:</label>
+        <input type="text" id="problem" class="input" placeholder="Describe your problem…" required>
+      </div>
+
+      <!-- Technology check‑boxes -->
+      <div class="section">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Preferred Technologies:</label>
+        <div class="grid-2">
+          <label class="flex items-center"><input type="checkbox" id="tech-ai" class="mr-2"><span>AI/ML</span></label>
+          <label class="flex items-center"><input type="checkbox" id="tech-iot" class="mr-2"><span>IoT</span></label>
+          <label class="flex items-center"><input type="checkbox" id="tech-mobile" class="mr-2"><span>Mobile</span></label>
+          <label class="flex items-center"><input type="checkbox" id="tech-web" class="mr-2"><span>Web</span></label>
+          <label class="flex items-center"><input type="checkbox" id="tech-embedded" class="mr-2"><span>Embedded</span></label>
+          <label class="flex items-center"><input type="checkbox" id="tech-robotics" class="mr-2"><span>Robotics</span></label>
+          <label class="flex items-center"><input type="checkbox" id="tech-control" class="mr-2"><span>Control</span></label>
+          <label class="flex items-center"><input type="checkbox" id="tech-security" class="mr-2"><span>Cybersecurity</span></label>
+        </div>
+      </div>
+
+      <!-- Innovation slider -->
+      <div class="section">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Innovation Level (1‑10):</label>
+        <input type="range" id="innovationLevel" min="1" max="10" value="5" class="innovation-slider w-full">
+        <div class="flex justify-between text-xs text-gray-500 mt-1"><span>Low Risk</span><span>High Innovation</span></div>
+      </div>
+
+      <!-- Complexity -->
+      <div class="section">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Complexity:</label>
+        <select id="complexity" class="select">
+          <option value="beginner">Beginner</option>
+          <option value="intermediate">Intermediate</option>
+          <option value="advanced">Advanced</option>
+        </select>
+      </div>
+
+      <!-- Budget -->
+      <div class="section">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Budget (USD):</label>
+        <input type="number" id="budgetInput" min="0" placeholder="e.g., 5000" class="input" required>
+      </div>
+
+      <div class="section text-right">
+        <button type="submit" class="btn"><i class="fas fa-magic"></i><span>Generate Project Ideas</span></button>
+      </div>
+    </form>
+  </div>
+
+  <!-- ------------- Thinking card (new) ------------- -->
+  <div id="thinkingContainer" class="card mb-6">
+    <h3 class="font-semibold mb-2">Model Thinking</h3>
+    <pre id="thinkingLog" class="log" style="height:140px;"></pre>
+  </div>
+  <!-- Results card -->
+  <div id="resultsContainer" class="card mb-6">
+    <div id="spinner" class="spinner hidden"></div>
+    <div id="results"></div>
+  </div>
+
+  <!-- Log card -->
+  <div class="card">
+    <div class="flex justify-between items-center mb-2">
+      <label class="block text-sm font-medium text-gray-700">Log</label>
+      <div class="space-x-2">
+        <button id="clearLogBtn" class="btn btn-sm bg-red-600 hover:bg-red-700 text-white">
+          <i class="fas fa-trash-alt"></i> Clear
+        </button>
+        <label class="flex items-center cursor-pointer">
+          <input id="verboseLogToggle" type="checkbox" class="mr-1">
+          <span class="text-sm text-gray-700">Verbose</span>
+        </label>
+      </div>
+    </div>
+    <pre id="log" class="log"></pre>
+  </div>
+
+</div>
+
+<script src="main.js"></script>
+<script>
+  /* Global flag for verbose logging – default off */
+  window.LOG_VERBOSE = false;
+
+  // Hook up the toggle
+  document.getElementById('verboseLogToggle').addEventListener('change', e=>{
+    window.LOG_VERBOSE = e.target.checked;
+    const status = window.LOG_VERBOSE ? 'ON' : 'OFF';
+    log(`Verbose logging ${status}`);
+  });
+
+  // Clear log button
+  document.getElementById('clearLogBtn').addEventListener('click', ()=>{
+    document.getElementById('log').textContent = '';
+  });
+</script>
+</body>
+</html>
+
+
+

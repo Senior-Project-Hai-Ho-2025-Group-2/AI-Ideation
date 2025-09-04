@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Powered Ideation - Senior Project</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .card-shadow {
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .innovation-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 8px;
+            border-radius: 5px;
+            background: #e2e8f0;
+            outline: none;
+        }
+        
+        .innovation-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        }
+        
+        .innovation-slider::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        }
+        
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .project-card {
+            border-left: 4px solid #667eea;
+            transition: all 0.3s ease;
+        }
+        
+        .project-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 30px -10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .tech-tag {
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+            border: 1px solid rgba(102, 126, 234, 0.3);
+        }
+        
+        .market-analysis {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .error-message {
+            background-color: #fee2e2;
+            border-left: 4px solid #ef4444;
+            color: #dc2626;
+        }
+        
+        .success-message {
+            background-color: #d1fae5;
+            border-left: 4px solid #10b981;
+            color: #059669;
+        }
+        
+        body {
+            line-height: 1.6;
+            color: #374151;
+        }
+        
+        .section-spacing {
+            margin-bottom: 2rem;
+        }
+        
+        .no-print-break {
+            page-break-inside: avoid;
+            break-inside: avoid;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="w-full max-w-7xl mx-auto p-4 space-y-6">
+        <!-- Header -->
+        <div class="gradient-bg text-white p-8 rounded-2xl card-shadow no-print-break">
+            <div class="flex items-center justify-center space-x-4">
+                <i class="fas fa-lightbulb text-3xl"></i>
+                <h1 class="text-4xl font-bold text-center">AI-Powered Ideation - Senior Project</h1>
+            </div>
+            <p class="text-xl text-center mt-4 opacity-90">Generate innovative project ideas tailored to your constraints and solve real-world problems</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Configuration Panel -->
+            <div class="lg:col-span-1">
+                <div class="bg-white p-6 rounded-xl card-shadow no-print-break">
+                    <div class="flex items-center space-x-3 mb-6">
+                        <i class="fas fa-cog text-blue-600 text-xl"></i>
+                        <h2 class="text-2xl font-semibold text-gray-800">Configuration</h2>
+                    </div>
+                    
+                    <div class="space-y-6">
+                        <div>
+                            <label class="flex items-center space-x-2 text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-key text-gray-500"></i>
+                                <span>OpenAI API Key</span>
+                            </label>
+                            <input type="password" id="apiKey" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" placeholder="sk-...">
+                        </div>
+                        
+                        <div>
+                            <label class="flex items-center space-x-2 text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-brain text-gray-500"></i>
+                                <span>AI Model</span>
+                            </label>
+                            <select id="aiModel" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+                                <option value="gpt-4">GPT-4</option>
+                                <option value="gpt-4-turbo-preview">GPT-4 Turbo (Latest, Balanced)</option>
+                                <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                                <option value="gpt-3.5-turbo-16k">GPT-3.5 Turbo 16k</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Project Parameters -->
+                <div class="bg-white p-6 rounded-xl card-shadow mt-6 no-print-break">
+                    <div class="flex items-center space-x-3 mb-6">
+                        <i class="fas fa-sliders-h text-green-600 text-xl"></i>
+                        <h2 class="text-2xl font-semibold text-gray-800">Project Parameters</h2>
+                    </div>
+                    
+                    <div class="space-y-6">
+                        <div>
+                            <label class="text-sm font-medium text-gray-700 mb-3 block">Problem Statement (optional)</label>
+                            <input type="text" id="problemStatement" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" placeholder="e.g., Students struggle to find study spaces on campus">
+                        </div>
+
+                        <div>
+                            <label class="text-sm font-medium text-gray-700 mb-3 block">Preferred Technologies</label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <label class="flex items-center space-x-2">
+                                    <input type="checkbox" id="tech-ai" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                    <span class="text-sm">AI/ML</span>
+                                </label>
+                                <label class="flex items-center space-x-2">
+                                    <input type="checkbox" id="tech-iot" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                    <span class="text-sm">IoT</span>
+                                </label>
+                                <label class="flex items-center space-x-2">
+                                    <input type="checkbox" id="tech-mobile" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                    <span class="text-sm">Mobile Development</span>
+                                </label>
+                                <label class="flex items-center space-x-2">
+                                    <input type="checkbox" id="tech-web" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                    <span class="text-sm">Web Development</span>
+                                </label>
+                                <label class="flex items-center space-x-2">
+                                    <input type="checkbox" id="tech-embedded" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                    <span class="text-sm">Embedded Systems</span>
+                                </label>
+                                <label class="flex items-center space-x-2">
+                                    <input type="checkbox" id="tech-robotics" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                    <span class="text-sm">Robotics</span>
+                                </label>
+                                <label class="flex items-center space-x-2">
+                                    <input type="checkbox" id="tech-control" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                    <span class="text-sm">Control System</span>
+                                </label>
+                                <label class="flex items-center space-x-2">
+                                    <input type="checkbox" id="tech-security" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                                    <span class="text-sm">Cybersecurity</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="text-sm font-medium text-gray-700 mb-3 block">Innovation Level</label>
+                            <div class="px-3">
+                                <input type="range" id="innovationLevel" min="1" max="10" value="5" class="innovation-slider w-full">
+                                <div class="flex justify-between text-xs text-gray-500 mt-1">
+                                    <span>Low Risk</span>
+                                    <span>High Innovation</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-sm font-medium text-gray-700 mb-2 block">Budget Range</label>
+                                <select id="budget" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+                                    <option value="200-500">$200 - $500</option>
+                                    <option value="500-800">$500 - $800</option>
+                                    <option value="800-1200">$800 - $1,200</option>
+                                    <option value="1200+">$1,200+</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-sm font-medium text-gray-700 mb-2 block">Complexity</label>
+                                <select id="complexity" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+                                    <option value="beginner">Beginner</option>
+                                    <option value="intermediate">Intermediate</option>
+                                    <option value="advanced">Advanced</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <button id="generateBtn" class="w-full btn-primary text-white font-semibold py-3 px-6 rounded-lg hover:shadow-lg transition-all duration-300 flex items-center justify-center space-x-2">
+                            <i class="fas fa-magic"></i>
+                            <span>Generate Project Ideas</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Panel -->
+            <div class="lg:col-span-2">
+                <div id="loadingMessage" class="hidden bg-white p-6 rounded-xl card-shadow">
+                    <div class="flex items-center justify-center space-x-3">
+                        <div class="loading-spinner"></div>
+                        <span class="text-lg font-medium text-gray-600">Generating innovative project ideas...</span>
+                    </div>
+                </div>
+                
+                <div id="errorMessage" class="hidden error-message p-4 rounded-lg mb-6">
+                    <div class="flex items-center space-x-2">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span id="errorText"></span>
+                    </div>
+                </div>
+                
+                <div id="resultsContainer" class="space-y-6"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class AIIdeationTool {
+            constructor() {
+                this.apiKey = '';
+                this.model = 'gpt-4-turbo-preview';
+                this.setupEventListeners();
+            }
+
+            setupEventListeners() {
+                document.getElementById('generateBtn').addEventListener('click', () => this.generateProjects());
+                document.getElementById('apiKey').addEventListener('input', (e) => {
+                    this.apiKey = e.target.value;
+                });
+                document.getElementById('aiModel').addEventListener('change', (e) => {
+                    this.model = e.target.value;
+                });
+            }
+
+            async generateProjects() {
+                if (!this.apiKey) {
+                    this.showError('Please enter your OpenAI API key in the Configuration section.');
+                    return;
+                }
+
+                this.showLoading();
+                
+                try {
+                    const parameters = this.collectParameters();
+                    const prompt = this.buildPrompt(parameters);
+                    
+                    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${this.apiKey}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            model: this.model,
+                            messages: [{ role: 'user', content: prompt }],
+                            temperature: 0.8,
+                            max_tokens: 2000
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`API Error: ${response.status} ${response.statusText}`);
+                    }
+
+                    const data = await response.json();
+                    const projects = this.parseProjects(data.choices[0].message.content);
+                    this.displayProjects(projects);
+                    
+                } catch (error) {
+                    this.showError(`Error generating projects: ${error.message}`);
+                } finally {
+                    this.hideLoading();
+                }
+            }
+
+            collectParameters() {
+                const technologies = [];
+                const techCheckboxes = document.querySelectorAll('input[type="checkbox"]:checked');
+                techCheckboxes.forEach(cb => {
+                    const label = cb.parentElement.textContent.trim();
+                    technologies.push(label);
+                });
+
+                return {
+                    problemStatement: document.getElementById('problemStatement').value,
+                    technologies: technologies,
+                    innovation: document.getElementById('innovationLevel').value,
+                    budget: document.getElementById('budget').value,
+                    complexity: document.getElementById('complexity').value
+                };
+            }
+
+            buildPrompt(params) {
+                let prompt = `Generate 3 innovative senior design project ideas for computer engineering students with these specifications:
+
+Team: 4 students, 2 semesters (8-9 months)
+Budget: $${params.budget}
+Complexity: ${params.complexity}
+Innovation Level: ${params.innovation}/10 (1=safe/proven, 10=cutting-edge/risky)`;
+
+                if (params.problemStatement) {
+                    prompt += `\nProblem to Solve: ${params.problemStatement}`;
+                }
+
+                if (params.technologies.length > 0) {
+                    prompt += `\nPreferred Technologies: ${params.technologies.join(', ')}`;
+                }
+
+                prompt += `\n\nFor each project, provide:
+1. **Project Title**: Clear, descriptive name
+2. **Description**: 2-3 sentences explaining the concept and target problem
+3. **Key Components**: List of required hardware/software components
+4. **Technologies**: Specific technologies used
+5. **Estimated Cost**: Breakdown of major components
+6. **Timeline**: 8-month milestone timeline
+7. **Market Appeal**: Target audience and value proposition
+8. **Challenges**: Main technical and implementation challenges
+9. **Unique Value**: What makes this project special/different
+
+Format each project clearly with headers and bullet points.`;
+
+                return prompt;
+            }
+
+            parseProjects(content) {
+                const projects = [];
+                const sections = content.split(/(?=\*\*Project \d|Project \d|\d\.\s)/);
+                
+                sections.forEach(section => {
+                    if (section.trim() && (section.includes('Project') || /^\d\./.test(section.trim()))) {
+                        const project = {
+                            id: Date.now() + Math.random(),
+                            title: this.extractTitle(section),
+                            description: this.extractDescription(section),
+                            components: this.extractComponents(section),
+                            technologies: this.extractTechnologies(section),
+                            cost: this.extractCost(section),
+                            timeline: this.extractTimeline(section),
+                            marketAppeal: this.extractMarketAppeal(section),
+                            challenges: this.extractChallenges(section),
+                            uniqueValue: this.extractUniqueValue(section),
+                            fullContent: section
+                        };
+                        projects.push(project);
+                    }
+                });
+                
+                return projects;
+            }
+
+            extractTitle(content) {
+                const titleMatch = content.match(/\*\*Project Title\*\*:?\s*(.+?)(?:\n|$)/i) || 
+                                 content.match(/Project \d+:?\s*(.+?)(?:\n|$)/i) ||
+                                 content.match(/^\d\.\s*\*\*(.+?)\*\*/);
+                return titleMatch ? titleMatch[1].replace(/\*\*/g, '').trim() : 'Untitled Project';
+            }
+
+            extractDescription(content) {
+                const descMatch = content.match(/\*\*Description\*\*:?\s*([\s\S]*?)(?=\*\*|$)/i);
+                return descMatch ? descMatch[1].trim() : 'No description available.';
+            }
+
+            extractComponents(content) {
+                const compMatch = content.match(/\*\*(?:Key )?Components?\*\*:?\s*([\s\S]*?)(?=\*\*|$)/i);
+                return compMatch ? compMatch[1].trim() : 'Components not specified.';
+            }
+
+            extractTechnologies(content) {
+                const techMatch = content.match(/\*\*Technologies\*\*:?\s*([\s\S]*?)(?=\*\*|$)/i);
+                return techMatch ? techMatch[1].trim() : 'Technologies not specified.';
+            }
+
+            extractCost(content) {
+                const costMatch = content.match(/\*\*(?:Estimated )?Cost\*\*:?\s*([\s\S]*?)(?=\*\*|$)/i);
+                return costMatch ? costMatch[1].trim() : 'Cost estimate not available.';
+            }
+
+            extractTimeline(content) {
+                const timeMatch = content.match(/\*\*Timeline\*\*:?\s*([\s\S]*?)(?=\*\*|$)/i);
+                return timeMatch ? timeMatch[1].trim() : 'Timeline not specified.';
+            }
+
+            extractMarketAppeal(content) {
+                const marketMatch = content.match(/\*\*Market Appeal\*\*:?\s*([\s\S]*?)(?=\*\*|$)/i);
+                return marketMatch ? marketMatch[1].trim() : 'Market appeal not specified.';
+            }
+
+            extractChallenges(content) {
+                const challengeMatch = content.match(/\*\*Challenges\*\*:?\s*([\s\S]*?)(?=\*\*|$)/i);
+                return challengeMatch ? challengeMatch[1].trim() : 'Challenges not specified.';
+            }
+
+            extractUniqueValue(content) {
+                const valueMatch = content.match(/\*\*(?:Unique )?Value\*\*:?\s*([\s\S]*?)(?=\*\*|$)/i);
+                return valueMatch ? valueMatch[1].trim() : 'Unique value not specified.';
+            }
+
+            displayProjects(projects) {
+                const container = document.getElementById('resultsContainer');
+                container.innerHTML = '';
+
+                if (projects.length === 0) {
+                    container.innerHTML = '<div class="bg-yellow-50 border border-yellow-200 text-yellow-700 p-4 rounded-lg">No projects were generated. Please try adjusting your parameters and try again.</div>';
+                    return;
+                }
+
+                projects.forEach((project, index) => {
+                    const projectCard = this.createProjectCard(project, index + 1);
+                    container.appendChild(projectCard);
+                });
+            }
+
+            createProjectCard(project, number) {
+                const card = document.createElement('div');
+                card.className = 'project-card bg-white p-6 rounded-xl card-shadow no-print-break';
+                
+                card.innerHTML = `
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="flex items-center space-x-3">
+                            <span class="bg-blue-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-semibold">${number}</span>
+                            <h3 class="text-xl font-semibold text-gray-800">${project.title}</h3>
+                        </div>
+                        <button onclick="ideationTool.generateMarketSurvey('${project.id}', '${project.title.replace(/'/g, "\\'")}', '${project.description.replace(/'/g, "\\'").substring(0, 100)}...')" 
+                                class="market-analysis text-white px-4 py-2 rounded-lg font-medium hover:shadow-lg transition-all duration-300 flex items-center space-x-2">
+                            <i class="fas fa-chart-bar"></i>
+                            <span>Market Survey</span>
+                        </button>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="space-y-4">
+                            <div>
+                                <h4 class="font-semibold text-gray-700 mb-2"><i class="fas fa-info-circle text-blue-500 mr-2"></i>Description</h4>
+                                <p class="text-gray-600">${project.description}</p>
+                            </div>
+                            
+                            <div>
+                                <h4 class="font-semibold text-gray-700 mb-2"><i class="fas fa-cogs text-green-500 mr-2"></i>Key Components</h4>
+                                <p class="text-gray-600">${project.components}</p>
+                            </div>
+                            
+                            <div>
+                                <h4 class="font-semibold text-gray-700 mb-2"><i class="fas fa-microchip text-purple-500 mr-2"></i>Technologies</h4>
+                                <p class="text-gray-600">${project.technologies}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <h4 class="font-semibold text-gray-700 mb-2"><i class="fas fa-dollar-sign text-yellow-500 mr-2"></i>Est. Cost</h4>
+                                <p class="text-gray-600">${project.cost}</p>
+                            </div>
+                            
+                            <div>
+                                <h4 class="font-semibold text-gray-700 mb-2"><i class="fas fa-clock text-red-500 mr-2"></i>Timeline</h4>
+                                <p class="text-gray-600">${project.timeline}</p>
+                            </div>
+                            
+                            <div>
+                                <h4 class="font-semibold text-gray-700 mb-2"><i class="fas fa-target text-indigo-500 mr-2"></i>Market Appeal</h4>
+                                <p class="text-gray-600">${project.marketAppeal}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <h4 class="font-semibold text-gray-700 mb-2"><i class="fas fa-exclamation-triangle text-orange-500 mr-2"></i>Challenges</h4>
+                            <p class="text-gray-600">${project.challenges}</p>
+                        </div>
+                        
+                        <div>
+                            <h4 class="font-semibold text-gray-700 mb-2"><i class="fas fa-star text-pink-500 mr-2"></i>Unique Value</h4>
+                            <p class="text-gray-600">${project.uniqueValue}</p>
+                        </div>
+                    </div>
+                    
+                    <div id="market-${project.id}" class="mt-4 hidden"></div>
+                `;
+                
+                return card;
+            }
+
+            async generateMarketSurvey(projectId, title, description) {
+                const marketContainer = document.getElementById(`market-${projectId}`);
+                marketContainer.className = 'mt-4 bg-gray-50 p-4 rounded-lg';
+                marketContainer.innerHTML = `
+                    <div class="flex items-center space-x-2 text-blue-600">
+                        <div class="loading-spinner"></div>
+                        <span class="font-medium">Analyzing market and competitors...</span>
+                    </div>
+                `;
+
+                try {
+                    const prompt = `Conduct a competitive market analysis for this senior design project idea:
+
+Project: ${title}
+Description: ${description}
+
+Provide a comprehensive analysis including:
+
+1. **Market Overview**
+   - Market size and growth potential
+   - Target audience analysis
+   - Current trends and opportunities
+
+2. **Top 3 Competing Products/Solutions**
+   For each competitor, include:
+   - Product name and company
+   - Key features and capabilities
+   - Pricing model
+   - Strengths and weaknesses
+   - Market positioning
+
+3. **Competitive Analysis Table**
+   Create a comparison table with columns: Product | Features | Price | Pros | Cons
+
+4. **Market Opportunities**
+   - Gaps in current solutions
+   - Differentiation opportunities
+   - Potential competitive advantages
+   - Market entry strategies
+
+5. **Business Viability**
+   - Revenue potential
+   - Development costs vs market size
+   - Risk assessment
+   - Recommendations for student project positioning
+
+Format the response with clear headers and bullet points for easy reading.`;
+
+                    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${this.apiKey}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            model: this.model,
+                            messages: [{ role: 'user', content: prompt }],
+                            temperature: 0.7,
+                            max_tokens: 1500
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`API Error: ${response.status} ${response.statusText}`);
+                    }
+
+                    const data = await response.json();
+                    const analysis = data.choices[0].message.content;
+                    
+                    marketContainer.innerHTML = `
+                        <div class="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-4 rounded-lg mb-4">
+                            <h4 class="font-semibold flex items-center space-x-2">
+                                <i class="fas fa-chart-line"></i>
+                                <span>Market Analysis & Competitive Landscape</span>
+                            </h4>
+                        </div>
+                        <div class="prose max-w-none text-gray-700">
+                            ${this.formatMarketAnalysis(analysis)}
+                        </div>
+                    `;
+
+                } catch (error) {
+                    marketContainer.innerHTML = `
+                        <div class="error-message p-4 rounded-lg">
+                            <div class="flex items-center space-x-2">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <span>Error generating market survey: ${error.message}</span>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+
+            formatMarketAnalysis(content) {
+                return content
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/^\s*[-•]\s+/gm, '• ')
+                    .replace(/\n\n/g, '</p><p>')
+                    .replace(/^/, '<p>')
+                    .replace(/$/, '</p>')
+                    .replace(/<p><\/p>/g, '');
+            }
+
+            showLoading() {
+                document.getElementById('loadingMessage').classList.remove('hidden');
+                document.getElementById('errorMessage').classList.add('hidden');
+                document.getElementById('resultsContainer').innerHTML = '';
+            }
+
+            hideLoading() {
+                document.getElementById('loadingMessage').classList.add('hidden');
+            }
+
+            showError(message) {
+                document.getElementById('errorText').textContent = message;
+                document.getElementById('errorMessage').classList.remove('hidden');
+                this.hideLoading();
+            }
+        }
+
+        // Initialize the application
+        const ideationTool = new AIIdeationTool();
+    </script>
+</body>
+</html>
+    <script id="html_badge_script1">
+        window.__genspark_remove_badge_link = "https://www.genspark.ai/api/html_badge/" +
+            "remove_badge?token=To%2FBnjzloZ3UfQdcSaYfDtHNocOt7BlPbxTgSluyE4AMIR1309yiq6sfszL9OoZWhraQkeHFpjHE4TmUbhKQLRgNwPGby4GPskwVG0Ckd9IaUx7bOE36TaS%2BNIdA1hS3hX4qNXoAvhfuocqV4Wz1ORq5NG%2ByRcQsqD6y9XbffGjl9GVACTGFiEVTlSrW7I%2Fe7Lvs4G%2BIRGBD2X4iys7VrSPEEwdLgJMrl3LwK72HgwssuwzyKvudvdw6Fha9N1R6QKu3EE5VezsEqBMfM%2BH%2FQvqztJHe4UvpSpDinsootud%2FQd7cbGUkKYKSgkE5x%2FQEp8drDrzL0oIXQVI9e4MytpXfu4gl%2Bydq2JbE3xVBUqL5KQWuOhsLxdnwjzTguyginH4Wox6IpPS1%2BSjwy9mn2gXyhBOzDMChDqya%2FSebsFLJwkwlKQP28CIqKalzjE%2Fkd2B8%2B%2BshHO%2FljooOg8o4fPETzuDYPc8LDisHExE3f20ZSdtSlllX6Q8SlnGm0jyDXOaarfLmTPKTiJslHNp2aiVo1ZiwEB6aaprFhkiGlBs%3D";
+        window.__genspark_locale = "en-US";
+        window.__genspark_token = "To/BnjzloZ3UfQdcSaYfDtHNocOt7BlPbxTgSluyE4AMIR1309yiq6sfszL9OoZWhraQkeHFpjHE4TmUbhKQLRgNwPGby4GPskwVG0Ckd9IaUx7bOE36TaS+NIdA1hS3hX4qNXoAvhfuocqV4Wz1ORq5NG+yRcQsqD6y9XbffGjl9GVACTGFiEVTlSrW7I/e7Lvs4G+IRGBD2X4iys7VrSPEEwdLgJMrl3LwK72HgwssuwzyKvudvdw6Fha9N1R6QKu3EE5VezsEqBMfM+H/QvqztJHe4UvpSpDinsootud/Qd7cbGUkKYKSgkE5x/QEp8drDrzL0oIXQVI9e4MytpXfu4gl+ydq2JbE3xVBUqL5KQWuOhsLxdnwjzTguyginH4Wox6IpPS1+Sjwy9mn2gXyhBOzDMChDqya/SebsFLJwkwlKQP28CIqKalzjE/kd2B8++shHO/ljooOg8o4fPETzuDYPc8LDisHExE3f20ZSdtSlllX6Q8SlnGm0jyDXOaarfLmTPKTiJslHNp2aiVo1ZiwEB6aaprFhkiGlBs=";
+    </script>
+    
+    <script id="html_notice_dialog_script" src="https://www.genspark.ai/notice_dialog.js"></script>
+    
+
+
+
