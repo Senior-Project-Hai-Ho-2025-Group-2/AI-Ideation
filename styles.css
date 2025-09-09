@@ -90,12 +90,6 @@ body{
 }
 
 /* Thinking panel ------------------------------------------------ */
-#thinkingContainer[open] summary{
-  margin-bottom:.5rem;
-}
-#thinkingContainer summary{
-  font-weight:500;color:#4a5568;
-}
 .thinkingLog{
   opacity:.6;
   background:#f7fafc;

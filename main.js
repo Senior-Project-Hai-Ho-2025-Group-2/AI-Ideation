@@ -182,8 +182,8 @@ Only output the project ideas. Any extra information will be lost.`;
 }
 
 /* ----------  Show/Hide the thinking card  ---------- */
-function showThinkingCard(show){
-  const card = document.getElementById('thinkingContainer');
+function showThinkingCard(cardID, show){
+  const card = document.getElementById(cardID);
   card.classList.toggle('hidden', !show);
 }
 
@@ -314,7 +314,6 @@ function getUrlAndHeaders(isSelfHosted) {
       headers: { 'Content-Type': 'application/json' }
     };
   }
-
   // OpenAI
   const apiKey = document.getElementById('apiKey').value.trim();
   return {
@@ -457,7 +456,7 @@ document.getElementById('problemForm').addEventListener('submit', async e=>{
 
             <!--  ←  container that will hold the analysis  -->
             <!-- Thinking collapsible -->
-            <details id="thinkingContainer-${idx}" class="mt-4 border-t border-gray-200 pt-2">
+            <details id="thinkingContainer-${idx}" class="mt-4 border-t border-gray-200 pt-2 hidden">
               <summary class="text-indigo-600 font-medium cursor-pointer">Thinking</summary>
               <pre id="thinkingLog-${idx}" class="thinkingLog mt-2 bg-gray-50 rounded p-3 overflow-y-auto" style="height:140px;"></pre>
             </details>
@@ -483,7 +482,7 @@ document.getElementById('problemForm').addEventListener('submit', async e=>{
     el.textContent = thinkingBuf.join('');
     el.scrollTop = el.scrollHeight;
     if(document.getElementById('thinkingContainer').classList.contains('hidden')){
-      showThinkingCard(true);   // reveal card on first thought
+      showThinkingCard('thinkingContainer', true);   // reveal card on first thought
     }
   };
 
@@ -494,6 +493,7 @@ document.getElementById('problemForm').addEventListener('submit', async e=>{
   // -----  Ideation request  ----- //
   if (type === 'openai') {
     try {
+      log('--- Sending request to OpenAI ---', LOG_LEVELS.DEBUG);
       const resp = await sendRequest({
         isSelfHosted: false,
         model,
@@ -507,6 +507,7 @@ document.getElementById('problemForm').addEventListener('submit', async e=>{
     }
   } else if (type === 'selfhosted') {
     /* 1️⃣  Try with think=true  */
+    log('--- Sending request to Ollama (Thinking = True) ---', LOG_LEVELS.DEBUG);
     try {
       const resp = await sendRequest({
         isSelfHosted: true,
@@ -518,6 +519,7 @@ document.getElementById('problemForm').addEventListener('submit', async e=>{
       await streamNDJSON(resp, onContent, onThinking, createOnDone('--- Ollama Stream Closed (thinking=true) ---', contentBuf));
     } catch (err) {
       /* 2️⃣  Retry without think if not supported  */
+      log('--- Sending request to Ollama (Thinking = False) ---', LOG_LEVELS.DEBUG);
       if (err.body && /does not support thinking/.test(err.body.error)) {
         try {
           const resp = await sendRequest({
@@ -583,8 +585,8 @@ async function generateMarketSurvey(projectId, projectMarkdown) {
     const el = document.getElementById(`thinkingLog-${projectId}`);
     el.textContent = thinkingBuf.join('');
     el.scrollTop = el.scrollHeight;
-    if(document.getElementById('thinkingContainer').classList.contains('hidden')){
-      showThinkingCard(true);   // reveal card on first thought
+    if(document.getElementById(`thinkingContainer-${projectId}`).classList.contains('hidden')){
+      showThinkingCard(`thinkingContainer-${projectId}`, true);   // reveal card on first thought
     }
   };
 
