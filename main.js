@@ -104,9 +104,10 @@ function splitIntoIdeas(mdText) {
   return sections;
 }
 
-/* ------------  Prompt builder  ------------------- */
-function buildPrompt(params){
-  let prompt = `Generate ${params.numOfIdeas} innovative senior design project ideas for computer engineering students with these specifications:
+/* ------------  Prompt builder for Ideation  ------------------- */
+function buildPrompt(params){ 
+  let prompt = `You are an ideation model. Generate innovative senior design project ideas for computer engineering students with these specifications:
+Number of Projects: ${params.numOfIdeas}
 Team: 4 students, 2 semesters (8‑9 months)
 Budget: $${params.budget}
 Complexity: ${params.complexity}
@@ -132,6 +133,49 @@ Innovation Level: ${params.innovation}/10 (1=safe/proven, 10=cutting‑edge/risk
 Format each project clearly with headers and bullet points. 
 Use markdown to format your response. 
 Start each new project with a level 2 header (##).
+Only output the project ideas. Any extra information will be lost.`;
+
+  return prompt;
+}
+
+/* ------------  Prompt builder for Market Analysis  ------------------- */
+function buildMarketAnalysisPrompt(project){
+  let prompt = `Conduct a competitive market analysis for this senior design project idea:
+
+Project: "${project}"
+
+Provide a comprehensive analysis including:
+
+1. **Market Overview**
+   - Market size and growth potential
+   - Target audience analysis
+   - Current trends and opportunities
+
+2. **Top 3 Competing Products/Solutions**
+   For each competitor, include:
+   - Product name and company
+   - Key features and capabilities
+   - Pricing model
+   - Strengths and weaknesses
+   - Market positioning
+
+3. **Competitive Analysis Table**
+   Create a comparison table with columns: Product | Features | Price | Pros | Cons
+
+4. **Market Opportunities**
+   - Gaps in current solutions
+   - Differentiation opportunities
+   - Potential competitive advantages
+   - Market entry strategies
+
+5. **Business Viability**
+   - Revenue potential
+   - Development costs vs market size
+   - Risk assessment
+   - Recommendations for student project positioning
+
+Format each project clearly with headers and bullet points. 
+Use markdown to format your response. 
 Only output the project ideas. Any extra information will be lost.`;
 
   return prompt;
@@ -199,7 +243,7 @@ function createOnDone(logMsg, contentBuffer) {
   };
 }
 
-/* === main.js – streamNDJSON (self‑hosted + OpenAI) === */
+/* === streamNDJSON (self‑hosted + OpenAI) === */
 async function streamNDJSON(resp, onContent, onThinking, onDone){
   const decoder = new TextDecoder();
   let leftover = '';
@@ -261,86 +305,93 @@ async function streamNDJSON(resp, onContent, onThinking, onDone){
   }
 }
 
-/* ----------  Request helper (with think flag)  ---------- */
-async function sendRequest(isSelfHosted, think){
-  const type   = document.getElementById('modelType').value;
-  const model  = document.getElementById('modelSelect').value;
-  const problem= document.getElementById('problem').value.trim();
-  const budget = document.getElementById('budgetInput').value.trim();
-  const numOfIdeas = document.getElementById('numOfIdeas').value.trim();
-
-  /* selected techs */
-  const techs = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'))
-                     .map(cb => cb.parentElement.textContent.trim());
-
-  /* build prompt */
-  const params = {
-    problemStatement: problem,
-    technologies: techs,
-    budget,
-    numOfIdeas,
-    complexity: document.getElementById('complexity').value
-  };
-  const prompt = buildPrompt(params);
-
-  /* raw body for logging */
-  const rawBody = JSON.stringify({
-    model,
-    messages: [{role:'user', content:prompt}],
-    temperature:1,
-    stream:true,
-  });
-  /* Set the correct token key based on the provider */
-  const tokenKey = isSelfHosted ? 'max_tokens' : 'max_completion_tokens';
-  rawBody[tokenKey] = 2000;
-
-  /* URL & headers */
-  let url, headers;
-  if(isSelfHosted){
+/* =====  URL + headers for each provider  ===== */
+function getUrlAndHeaders(isSelfHosted) {
+  if (isSelfHosted) {
     const base = document.getElementById('modelUrl').value.trim();
-    url = `${base}/api/chat`;
-    headers = {'Content-Type':'application/json'};
-  }else{
-    url = 'https://api.openai.com/v1/chat/completions';
-    headers = {
-      'Content-Type':'application/json',
-      Authorization:`Bearer ${document.getElementById('apiKey').value.trim()}`
+    return {
+      url: `${base}/api/chat`,
+      headers: { 'Content-Type': 'application/json' }
     };
   }
 
-  /* payload – add think flag only for self‑hosted */
-  const payload = JSON.parse(rawBody);
-  if(isSelfHosted){
-    payload.think = think;
-    delete payload.response_format;
-  }
+  // OpenAI
+  const apiKey = document.getElementById('apiKey').value.trim();
+  return {
+    url: 'https://api.openai.com/v1/chat/completions',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`
+    }
+  };
+}
 
-  /* logging */
-  const t0 = performance.now();
+/* =====  Build the JSON payload  ===== */
+function buildPayload({ isSelfHosted, model, prompt, stream = true, think = false }) {
+  const tokenKey = isSelfHosted ? 'max_tokens' : 'max_completion_tokens';
+  const payload = {
+    model,
+    messages: [{ role: 'user', content: prompt }],
+    temperature: 1,
+    stream,
+    [tokenKey]: 2000
+  };
+
+  if (isSelfHosted) {
+    payload.think = think;
+    delete payload.response_format;          // keep legacy behaviour
+  }
+  return payload;
+}
+
+/**
+ * Sends a request to either OpenAI or a self‑hosted model.
+ *
+ * @param {Object} options
+ * @param {boolean} options.isSelfHosted
+ * @param {string}  options.model
+ * @param {string}  options.prompt   // the user‑visible prompt
+ * @param {boolean} [options.stream=true]  // do we want a streaming response?
+ * @param {boolean} [options.think=false] // only relevant for self‑hosted
+ * @returns {Response}  The raw fetch Response – the caller can stream it.
+ */
+async function sendRequest({
+  isSelfHosted,
+  model,
+  prompt,
+  stream = true,
+  think = false
+}) {
+  const { url, headers } = getUrlAndHeaders(isSelfHosted);
+  const payload = buildPayload({
+    isSelfHosted,
+    model,
+    prompt,
+    stream,
+    think
+  });
+
+  /* ----------  Logging  ---------- */
   log(`>>> POST ${url}`, LOG_LEVELS.INFO);
   log(`Request headers: ${JSON.stringify(headers)}`, LOG_LEVELS.DEBUG);
-  log(`Request body (${payload?JSON.stringify(payload).length:0} bytes) – payload: "${JSON.stringify(payload)}"`, LOG_LEVELS.DEBUG);
+  log(
+    `Request body (${payload?.[Object.keys(payload)[0]]} bytes) – ${JSON.stringify(payload)}`,
+    LOG_LEVELS.DEBUG
+  );
 
-  /* fetch */
-  const resp = await fetch(url,{method:'POST',headers,body:JSON.stringify(payload)});
+  /* ----------  Fetch  ---------- */
+  const resp = await fetch(url, { method: 'POST', headers, body: JSON.stringify(payload) });
 
-  /* response logging */
-  const t1 = performance.now();
-  log(`<<< ${resp.status} ${resp.statusText} – ${(t1-t0).toFixed(1)} ms`, LOG_LEVELS.INFO);
-  const hdrs = [...resp.headers.entries()]
-                 .map(([k,v])=>`${k}: ${v}`).join('\n');
-  log(`Response headers:\n${hdrs}`, LOG_LEVELS.DEBUG);
-
-  /* error path – read *entire* body as text */
-  if(!resp.ok){
+  /* ----------  Error handling  ---------- */
+  if (!resp.ok) {
     const txt = await resp.text();
     let body;
-    try{ body = JSON.parse(txt); } catch{ body = txt; }
+    try { body = JSON.parse(txt); } catch { body = txt; }
     log(`Error body: ${JSON.stringify(body)}`, LOG_LEVELS.ERROR);
-    throw {status:resp.status, body};
+    throw { status: resp.status, body };
   }
 
-  return resp;           // success – keep the stream open for downstream use
+  return resp;   // caller will stream it
 }
 
 /* ----------  Form submit / streaming  ---------- */
@@ -352,11 +403,27 @@ document.getElementById('problemForm').addEventListener('submit', async e=>{
   const problem= document.getElementById('problem').value.trim();
   const budget = document.getElementById('budgetInput').value.trim();
 
+  /* --------------  Sanity checks  ----------------- */
   if(!type || !model || !problem || !budget){
     alert('All required fields must be filled.');
     return;
   }
 
+   /* --------------  Build ideation prompt  ----------- */
+  const techs = Array.from(
+    document.querySelectorAll('input[type="checkbox"]:checked')
+  ).map(cb => cb.parentElement.textContent.trim());
+
+  const prompt = buildPrompt({
+    numOfIdeas: document.getElementById('numOfIdeas').value.trim(),
+    problemStatement: problem,
+    technologies: techs,
+    budget,
+    complexity: document.getElementById('complexity').value,
+    innovation: document.getElementById('innovationLevel').value
+  });
+
+  /* --------------  Setup UI & state  ---------------- */
   const isSelfHosted = type==='selfhosted';
   showSpinner(true);
   document.getElementById('results').innerHTML = '';
@@ -376,17 +443,41 @@ document.getElementById('problemForm').addEventListener('submit', async e=>{
       const collapsible = `
         <details open class="project-details mb-4 rounded-lg border border-gray-200">
           <summary class="cursor-pointer bg-gray-100 px-4 py-2 font-medium text-indigo-600">
-            <i class="fas fa-caret-right mr-2"></i>
             <span>Idea ${idx + 1}</span>
           </summary>
           <div class="p-4 bg-white">
             ${html}
+
+            <!-- Market‑analysis button -->
+            <button class="btn btn-sm market-btn mt-3"
+                    data-project-id="${idx}"
+                    data-project="${section}">
+              <i class="fas fa-chart-line"></i> Market Analysis
+            </button>
+
+            <!--  ←  container that will hold the analysis  -->
+            <!-- Thinking collapsible -->
+            <details id="thinkingContainer-${idx}" class="mt-4 border-t border-gray-200 pt-2">
+              <summary class="text-indigo-600 font-medium cursor-pointer">Thinking</summary>
+              <pre id="thinkingLog-${idx}" class="thinkingLog mt-2 bg-gray-50 rounded p-3 overflow-y-auto" style="height:140px;"></pre>
+            </details>
+            <div id="market-${idx}" class="market-analysis my-4"></div>
           </div>
         </details>
       `;
       resultsEl.insertAdjacentHTML('beforeend', collapsible);
     });
   };
+  // Market Analysis button listener
+  document.getElementById('results').addEventListener('click', e => {
+    if (!e.target.matches('.market-btn')) return;
+
+    const btn = e.target.closest('.market-btn');
+    const projectId = btn.dataset.projectId;
+    const projectContent = btn.dataset.project;
+    generateMarketSurvey(projectId, projectContent);
+  });
+
   const renderThinking = ()=>{
     const el = document.getElementById('thinkingLog');
     el.textContent = thinkingBuf.join('');
@@ -400,37 +491,51 @@ document.getElementById('problemForm').addEventListener('submit', async e=>{
   const onContent = chunk => { contentBuf.push(chunk); renderResults(); };
   const onThinking= chunk => { thinkingBuf.push(chunk); renderThinking(); };
 
-  if (type==='openai'){
-    try{
-      log('--- Sending request to OpenAI ---', LOG_LEVELS.DEBUG);
-      const resp = await sendRequest(isSelfHosted, false);
+  // -----  Ideation request  ----- //
+  if (type === 'openai') {
+    try {
+      const resp = await sendRequest({
+        isSelfHosted: false,
+        model,
+        prompt,
+        stream: true
+      });
       await streamNDJSON(resp, onContent, onThinking, createOnDone('--- OpenAI Stream Closed ---', contentBuf));
     } catch(err) {
       console.error(err);
       log(`request returned error: ${err.message||err}`, LOG_LEVELS.ERROR);
     }
-  } else if (type==='selfhosted') {
-    /* first attempt – think = true */
-    try{
-      log('--- Attempt 1: thinking=true ---', LOG_LEVELS.DEBUG);
-      const resp = await sendRequest(isSelfHosted, true);
+  } else if (type === 'selfhosted') {
+    /* 1️⃣  Try with think=true  */
+    try {
+      const resp = await sendRequest({
+        isSelfHosted: true,
+        model,
+        prompt,
+        stream: true,
+        think: true
+      });
       await streamNDJSON(resp, onContent, onThinking, createOnDone('--- Ollama Stream Closed (thinking=true) ---', contentBuf));
-    }catch(err){
-      /* retry without thinking if not supported */
-      if(isSelfHosted && err.body && err.body.error &&
-        /does not support thinking/.test(err.body.error)){
-        log('Thinking unsupported – retrying with think=false', LOG_LEVELS.INFO);
-        try{
-          const resp = await sendRequest(isSelfHosted, false);
+    } catch (err) {
+      /* 2️⃣  Retry without think if not supported  */
+      if (err.body && /does not support thinking/.test(err.body.error)) {
+        try {
+          const resp = await sendRequest({
+            isSelfHosted: true,
+            model,
+            prompt,
+            stream: true,
+            think: false
+          });
           await streamNDJSON(resp, onContent, onThinking, createOnDone('--- Ollama Stream Closed (thinking=false) ---', contentBuf));
-        }catch(e){
+        } catch(e) {
           console.error(e);
           log(`Retry failed – ${e.message||e}`, LOG_LEVELS.ERROR, e.stack);
           document.getElementById('results').innerHTML =
             `<p class="text-red-600">Retry error: ${JSON.stringify(e.body||e, null, 2)}</p>`;
           showSpinner(false);
         }
-      }else{
+      } else {
         console.error(err);
         log(`Unhandled error: ${err.message||err}`, LOG_LEVELS.ERROR, err.stack);
         document.getElementById('results').innerHTML =
@@ -440,3 +545,104 @@ document.getElementById('problemForm').addEventListener('submit', async e=>{
     }
   }
 });
+/* ==============================================================
+   1.  Spinner helpers for the market‑analysis container
+   ============================================================== */
+function showMarketSpinner(show, container) {
+  if (!container) return;
+  container.innerHTML = show
+    ? `<div class="flex justify-center my-4"><i class="fas fa-spinner fa-spin"></i></div>`
+    : '';
+}
+
+/* =====  Market‑Analysis request  ===== */
+async function generateMarketSurvey(projectId, projectMarkdown) {
+  const type = document.getElementById('modelType').value;
+  const model = document.getElementById('modelSelect').value;
+  const prompt = buildMarketAnalysisPrompt(projectMarkdown);   // your own helper
+
+  /* Find the container that will receive the result */
+  const container = document.getElementById(`market-${projectId}`);
+  if (!container) return;
+
+  /* --------------  Setup UI & state  ---------------- */
+  const isSelfHosted = type==='selfhosted';
+  /* Show a tiny spinner in the dedicated div */
+  showMarketSpinner(true, container);
+  const contentBuf  = [];   // accumulated content chunks
+  const thinkingBuf = [];   // accumulated thinking chunks
+
+  /* helpers to update DOM */
+  const renderResults = ()=>{ 
+    const mdText = contentBuf.join('');
+    const html = marked.parse(mdText);
+    const el = document.getElementById(`market-${projectId}`);
+    el.innerHTML = html;
+  };
+  const renderThinking = ()=>{
+    const el = document.getElementById(`thinkingLog-${projectId}`);
+    el.textContent = thinkingBuf.join('');
+    el.scrollTop = el.scrollHeight;
+    if(document.getElementById('thinkingContainer').classList.contains('hidden')){
+      showThinkingCard(true);   // reveal card on first thought
+    }
+  };
+
+  /* callbacks for streamNDJSON  */
+  const onContent = chunk => { contentBuf.push(chunk); renderResults(); };
+  const onThinking= chunk => { thinkingBuf.push(chunk); renderThinking(); };
+
+  // -----  Ideation request  ----- //
+  if (type === 'openai') {
+    try {
+      const resp = await sendRequest({
+        isSelfHosted: false,
+        model,
+        prompt,
+        stream: true
+      });
+      await streamNDJSON(resp, onContent, onThinking, createOnDone('--- OpenAI Stream Closed ---', contentBuf));
+    } catch(err) {
+      console.error(err);
+      log(`request returned error: ${err.message||err}`, LOG_LEVELS.ERROR);
+    }
+  } else if (type === 'selfhosted') {
+    /* 1️⃣  Try with think=true  */
+    try {
+      const resp = await sendRequest({
+        isSelfHosted: true,
+        model,
+        prompt,
+        stream: true,
+        think: true
+      });
+      await streamNDJSON(resp, onContent, onThinking, createOnDone('--- Ollama Stream Closed (thinking=true) ---', contentBuf));
+    } catch (err) {
+      /* 2️⃣  Retry without think if not supported  */
+      if (err.body && /does not support thinking/.test(err.body.error)) {
+        try {
+          const resp = await sendRequest({
+            isSelfHosted: true,
+            model,
+            prompt,
+            stream: true,
+            think: false
+          });
+          await streamNDJSON(resp, onContent, onThinking, createOnDone('--- Ollama Stream Closed (thinking=false) ---', contentBuf));
+        } catch(e){
+          console.error(e);
+          log(`Retry failed – ${e.message||e}`, LOG_LEVELS.ERROR, e.stack);
+          document.getElementById('results').innerHTML =
+            `<p class="text-red-600">Retry error: ${JSON.stringify(e.body||e, null, 2)}</p>`;
+          showSpinner(false);
+        }
+      } else {
+        console.error(err);
+        log(`Unhandled error: ${err.message||err}`, LOG_LEVELS.ERROR, err.stack);
+        document.getElementById('results').innerHTML =
+          `<p class="text-red-600">Error: ${JSON.stringify(err.body||err, null, 2)}</p>`;
+        showSpinner(false);
+      }
+    }
+  }
+};
