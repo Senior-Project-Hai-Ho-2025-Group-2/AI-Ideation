@@ -211,11 +211,11 @@ function downloadMarkdown(mdContent){
 /* ------------------------------------------------------------------
    2. Add the “Download Markdown” button to the results area
 ------------------------------------------------------------------- */
-function addDownloadButton(mdContent){
+function addDownloadButton(mdContent, btnID){
   const container = document.getElementById('results');
 
   // Remove an old button if it already exists
-  const old = document.getElementById('downloadMdBtn');
+  const old = document.getElementById(btnID);
   if (old) old.remove();
 
   const btn = document.createElement('button');
@@ -235,10 +235,10 @@ function addDownloadButton(mdContent){
  * @param {string} logMsg      – message to log when the stream finishes
  * @param {string[]} contentBuffer – array of Markdown chunks already being collected
  */
-function createOnDone(logMsg, contentBuffer) {
+function createOnDone(logMsg, contentBuffer, btnID) {
   return function () {
     log(logMsg, LOG_LEVELS.INFO);                 // 1️⃣  Log the finished message
-    addDownloadButton(contentBuffer.join(''));    // 2️⃣  Add the download button
+    addDownloadButton(contentBuffer.join(''), btnID);    // 2️⃣  Add the download button
     showSpinner(false);                           // Spinner off
   };
 }
@@ -500,7 +500,7 @@ document.getElementById('problemForm').addEventListener('submit', async e=>{
         prompt,
         stream: true
       });
-      await streamNDJSON(resp, onContent, onThinking, createOnDone('--- OpenAI Stream Closed ---', contentBuf));
+      await streamNDJSON(resp, onContent, onThinking, createOnDone('--- OpenAI Stream Closed ---', contentBuf, 'downloadMdBtn'));
     } catch(err) {
       console.error(err);
       log(`request returned error: ${err.message||err}`, LOG_LEVELS.ERROR);
@@ -516,7 +516,7 @@ document.getElementById('problemForm').addEventListener('submit', async e=>{
         stream: true,
         think: true
       });
-      await streamNDJSON(resp, onContent, onThinking, createOnDone('--- Ollama Stream Closed (thinking=true) ---', contentBuf));
+      await streamNDJSON(resp, onContent, onThinking, createOnDone('--- Ollama Stream Closed (thinking=true) ---', contentBuf, 'downloadMdBtn'));
     } catch (err) {
       /* 2️⃣  Retry without think if not supported  */
       log('--- Sending request to Ollama (Thinking = False) ---', LOG_LEVELS.DEBUG);
@@ -529,7 +529,7 @@ document.getElementById('problemForm').addEventListener('submit', async e=>{
             stream: true,
             think: false
           });
-          await streamNDJSON(resp, onContent, onThinking, createOnDone('--- Ollama Stream Closed (thinking=false) ---', contentBuf));
+          await streamNDJSON(resp, onContent, onThinking, createOnDone('--- Ollama Stream Closed (thinking=false) ---', contentBuf, 'downloadMdBtn'));
         } catch(e) {
           console.error(e);
           log(`Retry failed – ${e.message||e}`, LOG_LEVELS.ERROR, e.stack);
@@ -594,7 +594,7 @@ async function generateMarketSurvey(projectId, projectMarkdown) {
   const onContent = chunk => { contentBuf.push(chunk); renderResults(); };
   const onThinking= chunk => { thinkingBuf.push(chunk); renderThinking(); };
 
-  // -----  Ideation request  ----- //
+  // -----  Market Survey request  ----- //
   if (type === 'openai') {
     try {
       const resp = await sendRequest({
@@ -603,7 +603,10 @@ async function generateMarketSurvey(projectId, projectMarkdown) {
         prompt,
         stream: true
       });
-      await streamNDJSON(resp, onContent, onThinking, createOnDone('--- OpenAI Stream Closed ---', contentBuf));
+      await streamNDJSON(resp, onContent, onThinking, ()=> {
+        log('--- OpenAI Stream Closed ---', LOG_LEVELS.INFO);  // 1️⃣  Log the finished message
+        showSpinner(false);    
+      });
     } catch(err) {
       console.error(err);
       log(`request returned error: ${err.message||err}`, LOG_LEVELS.ERROR);
@@ -618,7 +621,10 @@ async function generateMarketSurvey(projectId, projectMarkdown) {
         stream: true,
         think: true
       });
-      await streamNDJSON(resp, onContent, onThinking, createOnDone('--- Ollama Stream Closed (thinking=true) ---', contentBuf));
+      await streamNDJSON(resp, onContent, onThinking, ()=> {
+        log('--- Ollama Stream Closed (thinking=true) ---', LOG_LEVELS.INFO);  // 1️⃣  Log the finished message
+        showSpinner(false);    
+      });
     } catch (err) {
       /* 2️⃣  Retry without think if not supported  */
       if (err.body && /does not support thinking/.test(err.body.error)) {
@@ -630,7 +636,10 @@ async function generateMarketSurvey(projectId, projectMarkdown) {
             stream: true,
             think: false
           });
-          await streamNDJSON(resp, onContent, onThinking, createOnDone('--- Ollama Stream Closed (thinking=false) ---', contentBuf));
+          await streamNDJSON(resp, onContent, onThinking, ()=> {
+        log('--- Ollama Stream Closed (thinking=false) ---', LOG_LEVELS.INFO);  // 1️⃣  Log the finished message
+        showSpinner(false);    
+      });
         } catch(e){
           console.error(e);
           log(`Retry failed – ${e.message||e}`, LOG_LEVELS.ERROR, e.stack);
