@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AI Ideation – Senior Project</title>
+
+<!-- Font Awesome 6  -->
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+      integrity="sha512-..."
+      crossorigin="anonymous" referrerpolicy="no-referrer">
+
+<!-- Tailwind CDN (2.2.19) -->
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+
+<!-- Custom CSS -->
+<link rel="stylesheet" href="styles.css">
+
+<!-- Markdown renderer -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+
+<body class="bg-gray-100 py-8 px-4 md:px-0">
+  <div class="max-w-4xl mx-auto">
+
+    <!-- ===== Header card ===== -->
+    <div class="card mb-6">
+      <div class="card-header">
+        <i class="fas fa-lightbulb text-2xl text-indigo-600"></i>
+        <h1 class="text-3xl font-semibold text-gray-800">AI Ideation – Senior Project</h1>
+      </div>
+      <p class="text-gray-600">Generate project ideas that match your constraints and budget.</p>
+    </div>
+
+    <!-- ===== Main form card ===== -->
+    <div class="card mb-6">
+      <h2 class="text-2xl font-semibold mb-2">Config</h2> 
+      <form id="problemForm">
+        <!-- Model type -->
+        <div class="section">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Select Model Type:</label>
+          <select id="modelType" required onchange="handleModelType()" class="select w-full">
+            <option value="">-- choose --</option>
+            <option value="openai">OpenAI</option>
+            <option value="selfhosted">Self‑Hosted</option>
+          </select>
+        </div>
+
+        <!-- OpenAI API key -->
+        <div id="apiKeyField" class="section hidden">
+          <label class="block text-sm font-medium text-gray-700 mb-1">OpenAI API Key:</label>
+          <input type="text" id="apiKey" class="input w-full" placeholder="sk-…" autocomplete="off" onblur="fetchModels()">
+        </div>
+
+        <!-- Self‑hosted URL -->
+        <div id="urlField" class="section hidden">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Self‑Hosted Base URL:</label>
+          <input type="text" id="modelUrl" class="input w-full" placeholder="http://192.168.1.10:11434" autocomplete="off" onblur="fetchModels()">
+        </div>
+
+        <!-- Model dropdown -->
+        <div id="modelSelectField" class="section hidden">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Select Model:</label>
+          <select id="modelSelect" required class="select w-full"></select>
+        </div>
+
+        <!-- Problem statement -->
+        <div class="section">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Problem Statement:</label>
+          <input type="text" id="problem" class="input w-full" placeholder="Describe your problem…" required>
+        </div>
+
+        <!-- Tech check‑boxes -->
+        <div class="section">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Preferred Technologies:</label>
+          <div class="grid-2 gap-4">
+            <label class="flex items-center"><input type="checkbox" class="mr-2"><span>AI/ML</span></label>
+            <label class="flex items-center"><input type="checkbox" class="mr-2"><span>IoT</span></label>
+            <label class="flex items-center"><input type="checkbox" class="mr-2"><span>Mobile</span></label>
+            <label class="flex items-center"><input type="checkbox" class="mr-2"><span>Web</span></label>
+            <label class="flex items-center"><input type="checkbox" class="mr-2"><span>Embedded</span></label>
+            <label class="flex items-center"><input type="checkbox" class="mr-2"><span>Robotics</span></label>
+            <label class="flex items-center"><input type="checkbox" class="mr-2"><span>Control</span></label>
+            <label class="flex items-center"><input type="checkbox" class="mr-2"><span>Cybersecurity</span></label>
+          </div>
+        </div>
+
+        <!-- Innovation slider -->
+        <div class="section">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Innovation Level (1‑10):</label>
+          <input type="range" id="innovationLevel" min="1" max="10" value="5" class="w-full innovation-slider">
+          <div class="flex justify-between text-xs text-gray-500 mt-1"><span>Low Risk</span><span>High Innovation</span></div>
+        </div>
+
+        <!-- Complexity -->
+        <div class="section">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Complexity:</label>
+          <select id="complexity" class="select w-full">
+            <option value="beginner">Beginner</option>
+            <option value="intermediate">Intermediate</option>
+            <option value="advanced">Advanced</option>
+          </select>
+        </div>
+
+        <!-- Budget -->
+        <div class="section">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Budget (USD):</label>
+          <input type="number" id="budgetInput" min="0" placeholder="e.g., 5000" class="input w-full" required>
+        </div>
+
+        <!-- Number of Ideas -->
+        <div class="section">
+          <label class="block text-sm font-medium text-gray-700 mb-1">Number of Ideas:</label>
+          <input type="number" id="numOfIdeas" min="1" max="10" placeholder="e.g., 3" class="input w-full" required>
+        </div>
+
+        <div class="section text-right">
+          <button type="submit" class="btn"><i class="fas fa-magic"></i> Generate Project Ideas</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- ===== Results card ===== -->
+    <div id="resultsContainer" class="card mb-6">
+      <h2 class="text-2xl font-semibold mb-2">Results</h2>          <!-- NEW -->
+      <p class="text-sm text-gray-500 mb-4">Here you’ll see the generated project ideas.</p> <!-- NEW -->
+
+      <!-- Thinking collapsible -->
+      <details id="thinkingContainer" class="mt-4 border-t border-gray-200 pt-2 hidden">
+        <summary class="text-indigo-600 font-medium cursor-pointer">Thinking</summary>
+        <pre id="thinkingLog" class="thinkingLog mt-2 bg-gray-50 rounded p-3 overflow-y-auto" style="height:140px;"></pre>
+      </details>
+
+      <div id="results" class="mt-4"></div>
+      <div id="spinner" class="spinner hidden"></div>
+    </div>
+
+    <!-- ===== Log card ===== -->
+    <div class="card">
+      <h2 class="text-2xl font-semibold mb-2">Logs</h2>  
+      <div class="flex justify-between items-center mb-2">
+        <div class="space-x-2 section text-right">
+          <button id="clearLogBtn" class="btn btn-sm bg-red-600 hover:bg-red-700 text-white"><i class="fas fa-trash-alt"></i> Clear</button>
+        </div>
+      </div>
+      <pre id="log" class="log"></pre>
+    </div>
+
+  </div>
+
+  <script src="main.js"></script>
+  <script>
+    // Clear log button
+    document.getElementById('clearLogBtn').addEventListener('click', ()=>{
+      document.getElementById('log').textContent = '';
+    });
+  </script>
+</body>
+</html>

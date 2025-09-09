@@ -1,0 +1,100 @@
+/* Basic page typography / background ---------------------------------------- */
+body{
+  font-family: 'Inter', Arial, sans-serif;
+}
+
+/* Cards ---------------------------------------------------- */
+.card{
+  background:#fff;
+  border-radius:12px;
+  box-shadow:0 4px 12px rgba(0,0,0,.05);
+  padding:1.5rem;
+  transition:box-shadow .2s ease;
+}
+.card:hover{box-shadow:0 8px 18px rgba(0,0,0,.08);}
+
+/* Card header --------------------------------------------------- */
+.card-header{display:flex;align-items:center;gap:.75rem;margin-bottom:1rem;}
+.card-header h2{font-size:1.5rem;font-weight:600;color:#2d3748;}
+
+/* Form controls ------------------------------------------------ */
+.input{
+  width:100%;padding:.75rem;border:1px solid #cbd5e0;border-radius:8px;transition:border-color .2s;
+}
+.input:focus{border-color:#667eea;outline:none;}
+.select{width:100%;padding:.75rem;border:1px solid #cbd5e0;border-radius:8px;background:#fff;}
+.btn{
+  display:inline-flex;align-items:center;gap:.5rem;background:#667eea;color:#fff;padding:.75rem 1.5rem;border-radius:8px;cursor:pointer;transition:background .2s;
+}
+.btn:hover{background:#5a67d8;}
+.btn-sm{padding:.5rem .75rem;font-size:.875rem;}
+
+.section{margin-bottom:1.5rem;}
+.section:last-child{margin-bottom:0;}
+
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+
+.innovation-slider{appearance:none;width:100%;height:.5rem;background:#cbd5e0;border-radius:.25rem;outline:none;}
+.innovation-slider::-webkit-slider-thumb{
+  appearance:none;width:1.5rem;height:1.5rem;background:#667eea;border-radius:50%;cursor:pointer;
+}
+.innovation-slider::-moz-range-thumb{
+  width:1.5rem;height:1.5rem;background:#667eea;border-radius:50%;cursor:pointer;
+}
+
+/* Spinner ---------------------------------------------------- */
+.spinner{
+  margin:auto;
+  border:4px solid #cbd5e0;
+  border-top:4px solid #667eea;
+  border-radius:50%;
+  width:36px;height:36px;
+  animation:spin 1s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Spinner placement ---------------------------------------- */
+#spinner{margin:0 auto;display:none;}
+
+/* Log area --------------------------------------------------- */
+.log{
+  background:#e2e8f0;
+  font-family:monospace;
+  font-size:.875rem;
+  padding:.75rem;
+  border-radius:8px;
+  height:140px;
+  overflow:auto;
+}
+
+/* Results markdown styling ----------------------------------- */
+#results *, #thinkingLog *{
+  overflow-wrap:anywhere;
+  word-break:break-word;
+}
+#results pre, #thinkingLog pre{
+  white-space:pre-wrap;
+  word-wrap:break-word;
+  overflow-x:auto;
+}
+#results h1,#results h2,#results h3,#results h4,#results h5,#results h6{
+  margin-top:1rem;margin-bottom:.5rem;
+}
+#results ul,#results ol{margin-left:1.25rem;margin-bottom:.75rem;}
+#results pre,#results code{
+  background:#f7fafc;
+  border:1px solid #e2e8f0;
+  padding:.5rem;
+  border-radius:4px;
+  overflow-x:auto;
+}
+
+/* Thinking panel ------------------------------------------------ */
+.thinkingLog{
+  opacity:.6;
+  background:#f7fafc;
+  border:1px solid #cbd5e0;
+  padding:.75rem;
+  border-radius:6px;
+  max-height:140px;
+}
