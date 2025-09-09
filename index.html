@@ -43,7 +43,7 @@
         <!-- OpenAI API key -->
         <div id="apiKeyField" class="section hidden">
           <label class="block text-sm font-medium text-gray-700 mb-1">OpenAI API Key:</label>
-          <input type="text" id="apiKey" class="input w-full" placeholder="sk-…" autocomplete="off">
+          <input type="text" id="apiKey" class="input w-full" placeholder="sk-…" autocomplete="off" onblur="fetchModels()">
         </div>
 
         <!-- Self‑hosted URL -->
@@ -129,10 +129,6 @@
       <div class="flex justify-between items-center mb-2">
         <div class="space-x-2">
           <button id="clearLogBtn" class="btn btn-sm bg-red-600 hover:bg-red-700 text-white"><i class="fas fa-trash-alt"></i> Clear</button>
-          <label class="flex items-center cursor-pointer">
-            <input id="verboseLogToggle" type="checkbox" class="mr-1">
-            <span class="text-sm text-gray-700">Verbose</span>
-          </label>
         </div>
       </div>
       <pre id="log" class="log"></pre>
@@ -142,15 +138,6 @@
 
   <script src="main.js"></script>
   <script>
-    /* Global flag for verbose logging – default off */
-    window.LOG_VERBOSE = false;
-
-    // Toggle verbose flag
-    document.getElementById('verboseLogToggle').addEventListener('change', e=>{
-      window.LOG_VERBOSE = e.target.checked;
-      log(`Verbose logging ${window.LOG_VERBOSE ? 'ON' : 'OFF'}`);
-    });
-
     // Clear log button
     document.getElementById('clearLogBtn').addEventListener('click', ()=>{
       document.getElementById('log').textContent = '';

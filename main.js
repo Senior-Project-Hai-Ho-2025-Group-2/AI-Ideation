@@ -25,38 +25,57 @@ function handleModelType(){
   const type = document.getElementById('modelType').value;
   document.getElementById('apiKeyField').classList.toggle('hidden', type !== 'openai');
   document.getElementById('urlField').classList.toggle('hidden', type !== 'selfhosted');
-  if(type === 'openai'){
-    document.getElementById('modelSelect').innerHTML =
-      '<option value="gpt-3.5-turbo">gpt‑3.5‑turbo</option>';
-    document.getElementById('modelSelectField').classList.remove('hidden');
-  }
 }
 
 /* ----------  Fetch self‑hosted model tags  --------- */
 async function fetchModels(){
-  const url = document.getElementById('modelUrl').value.trim();
-  if(!url) return;
-  const urlPattern = /^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$/;
-  if(!urlPattern.test(url)){ alert('Enter a valid URL'); return; }
+  const type = document.getElementById('modelType').value;
+  const select = document.getElementById('modelSelect');
+  document.getElementById('modelSelectField').classList.remove('hidden');
 
-  log(`Fetching models from ${url}/api/tags`, LOG_LEVELS.INFO);
-  showSpinner(true);
-  try{
-    const resp = await fetch(`${url}/api/tags`);
-    if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const data = await resp.json();
-    const select = document.getElementById('modelSelect');
-    select.innerHTML = '';
-    data.models.forEach(m=>{
-      const opt = document.createElement('option');
-      opt.value = m.name; opt.textContent = m.name; select.appendChild(opt);
-    });
-    document.getElementById('modelSelectField').classList.remove('hidden');
-    log(`Fetched ${data.models.length} models`, LOG_LEVELS.INFO);
-  }catch(err){
-    console.error(err); log(`Error fetching models: ${err.message}`, LOG_LEVELS.ERROR);
-    alert('Could not fetch models');
-  }finally{ showSpinner(false); }
+  if (type == 'openai') {
+    const apiKey = document.getElementById('apiKey').value.trim();
+    if (!apiKey) { return; }    // nothing to do yet – user hasn’t finished typing
+    log(`Fetching models from https://api.openai.com/v1/models`, LOG_LEVELS.INFO);
+    try {
+      const resp = await fetch('https://api.openai.com/v1/models', {
+        headers: { Authorization: `Bearer ${apiKey}` },
+      });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const data = await resp.json();
+      select.innerHTML = '';
+      data.data.forEach((m) => {
+        const opt = document.createElement('option');
+        opt.value = m.id;                 // e.g. "gpt-3.5-turbo"
+        opt.textContent = m.id;
+        select.appendChild(opt);
+      });
+      log(`Fetched ${data.data.length} OpenAI models`, LOG_LEVELS.INFO);
+    } catch (err) {
+      console.error(err);
+      log(`Error fetching OpenAI models: ${err.message}`, LOG_LEVELS.ERROR);
+      select.innerHTML = '<option value="NaN">No Models Found</option>';    
+    } 
+  } else if (type == 'selfhosted') {
+    const url = document.getElementById('modelUrl').value.trim();
+    if (!url) { return; }       // nothing to do yet – user hasn’t finished typing
+    log(`Fetching models from ${url}/api/tags`, LOG_LEVELS.INFO);
+    try{
+      const resp = await fetch(`${url}/api/tags`);
+      if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const data = await resp.json();
+      select.innerHTML = '';
+      data.models.forEach(m=>{
+        const opt = document.createElement('option');
+        opt.value = m.name; opt.textContent = m.name; select.appendChild(opt);
+      });
+      log(`Fetched ${data.models.length} models`, LOG_LEVELS.INFO);
+    }catch(err){
+      console.error(err); 
+      select.innerHTML = '<option value="NaN">No Models Found</option>';  
+      log(`Error fetching models: ${err.message}`, LOG_LEVELS.ERROR);
+    }
+  }
 }
 
 /* ------------  Prompt builder  ------------------- */
@@ -84,7 +103,8 @@ Innovation Level: ${params.innovation}/10 (1=safe/proven, 10=cutting‑edge/risk
 7. **Market Appeal**: Target audience and value proposition
 8. **Challenges**: Main technical and implementation challenges
 9. **Unique Value**: What makes this project special/different
-Format each project clearly with headers and bullet points.`;
+Format each project clearly with headers and bullet points. 
+Use markdown to format your response.`;
 
   return prompt;
 }
@@ -95,7 +115,63 @@ function showThinkingCard(show){
   card.classList.toggle('hidden', !show);
 }
 
-/* ----------  NDJSON streaming helper  ---------- */
+/* ------------------------------------------------------------------
+   1. Download the current Markdown into a .md file
+------------------------------------------------------------------- */
+function downloadMarkdown(mdContent){
+  const blob = new Blob([mdContent], {type:'text/markdown'});
+  const url  = URL.createObjectURL(blob);
+
+  const a = document.createElement('a');
+  a.href = url;
+
+  /* ----  Pick a nice filename ---- */
+  const filename = `ideation_${Date.now()}.md`;
+
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();          // trigger the download
+  document.body.removeChild(a);
+
+  URL.revokeObjectURL(url);   // cleanup
+}
+
+/* ------------------------------------------------------------------
+   2. Add the “Download Markdown” button to the results area
+------------------------------------------------------------------- */
+function addDownloadButton(mdContent){
+  const container = document.getElementById('results');
+
+  // Remove an old button if it already exists
+  const old = document.getElementById('downloadMdBtn');
+  if (old) old.remove();
+
+  const btn = document.createElement('button');
+  btn.id = 'downloadMdBtn';
+  btn.className = 'btn btn-sm mt-2';
+  btn.innerHTML = '<i class="fas fa-download"></i> Download Markdown';
+
+  btn.addEventListener('click', () => downloadMarkdown(mdContent));
+  container.appendChild(btn);
+}
+
+/**
+ * Returns an `onDone` callback that
+ *   • logs a custom message
+ *   • adds the “Download Markdown” button
+ *
+ * @param {string} logMsg      – message to log when the stream finishes
+ * @param {string[]} contentBuffer – array of Markdown chunks already being collected
+ */
+function createOnDone(logMsg, contentBuffer) {
+  return function () {
+    log(logMsg, LOG_LEVELS.INFO);                 // 1️⃣  Log the finished message
+    addDownloadButton(contentBuffer.join(''));    // 2️⃣  Add the download button
+    showSpinner(false);                           // Spinner off
+  };
+}
+
+/* === main.js – streamNDJSON (self‑hosted + OpenAI) === */
 async function streamNDJSON(resp, onContent, onThinking, onDone){
   const decoder = new TextDecoder();
   let leftover = '';
@@ -110,24 +186,48 @@ async function streamNDJSON(resp, onContent, onThinking, onDone){
 
       const text = decoder.decode(value, {stream:true});
       const lines = (leftover + text).split('\n');
-      leftover = lines.pop();                // incomplete line stays in buffer
+      leftover = lines.pop();                     // keep incomplete tail
 
-      for(const line of lines){
-        if(!line.trim()) continue;
+      for(const raw of lines){
+        const line = raw.trim();
+        if(!line) continue;
+
+        /* -------------  OpenAI sentinel ------------- */
+        if(line === 'data: [DONE]'){
+          onDone();
+          log('--- Stream NDJSON: END (DONE) ---', LOG_LEVELS.DEBUG);
+          return;
+        }
+
+        /* -------------  Determine JSON payload ------------- */
+        const isOpenAI = line.startsWith('data: ');
+        const jsonStr = isOpenAI ? line.substring('data: '.length) : line;
+
         let obj;
-        try{ obj = JSON.parse(line); } catch{
-          log(`Invalid JSON line: ${line}`, LOG_LEVELS.ERROR);
+        try{ obj = JSON.parse(jsonStr); } catch(e){
+          log(`Invalid JSON line: ${jsonStr}`, LOG_LEVELS.ERROR, e);
           continue;
         }
 
-        const msg = obj.message || {};
-        if(typeof msg.content === 'string')  onContent(msg.content);
-        if(typeof msg.thinking === 'string') onThinking(msg.thinking);
+        /* -------------  Self‑hosted finish flag ------------- */
+        if(obj.done === true){
+          onDone();
+          log('--- Stream NDJSON: END (self‑hosted DONE) ---', LOG_LEVELS.DEBUG);
+          return;
+        }
+
+        /* -------------  Pick the message payload ------------- */
+        const msg = obj.message ?? obj.choices?.[0]?.delta ?? {};
+
+        /* -------------  Forward chunks ------------- */
+        if(typeof msg.content === 'string')   onContent(msg.content);
+        if(typeof msg.thinking === 'string')  onThinking(msg.thinking);
       }
     }
 
+    /* Normal close – no sentinel seen */
     onDone();
-    log('--- Stream NDJSON: END ---', LOG_LEVELS.DEBUG);
+    log('--- Stream NDJSON: END (normal close) ---', LOG_LEVELS.DEBUG);
   }finally{
     reader.releaseLock();
   }
@@ -157,9 +257,12 @@ async function sendRequest(isSelfHosted, think){
   const rawBody = JSON.stringify({
     model,
     messages: [{role:'user', content:prompt}],
-    temperature:0.8,
-    max_tokens:2000
+    temperature:1,
+    stream:true,
   });
+  /* Set the correct token key based on the provider */
+  const tokenKey = isSelfHosted ? 'max_tokens' : 'max_completion_tokens';
+  rawBody[tokenKey] = 2000;
 
   /* URL & headers */
   let url, headers;
@@ -186,9 +289,7 @@ async function sendRequest(isSelfHosted, think){
   const t0 = performance.now();
   log(`>>> POST ${url}`, LOG_LEVELS.INFO);
   log(`Request headers: ${JSON.stringify(headers)}`, LOG_LEVELS.DEBUG);
-  const preview = payload ? JSON.stringify(payload).slice(0,80).replace(/\n/g,'\\n') : '—';
-  log(`Request body (${payload?JSON.stringify(payload).length:0} bytes) – preview: "${preview}"`,
-      LOG_LEVELS.DEBUG, LOG_VERBOSE()?JSON.stringify(payload):null);
+  log(`Request body (${payload?JSON.stringify(payload).length:0} bytes) – payload: "${JSON.stringify(payload)}"`, LOG_LEVELS.DEBUG);
 
   /* fetch */
   const resp = await fetch(url,{method:'POST',headers,body:JSON.stringify(payload)});
@@ -250,32 +351,43 @@ document.getElementById('problemForm').addEventListener('submit', async e=>{
   const onContent = chunk => { contentBuf.push(chunk); renderResults(); };
   const onThinking= chunk => { thinkingBuf.push(chunk); renderThinking(); };
 
-  /* first attempt – think = true */
-  try{
-    log('--- Attempt 1: thinking=true ---', LOG_LEVELS.DEBUG);
-    const resp = await sendRequest(isSelfHosted, true);
-    await streamNDJSON(resp, onContent, onThinking, ()=>{ showSpinner(false); log('--- Streaming finished (thinking=true) ---', LOG_LEVELS.INFO); });
-  }catch(err){
-    /* retry without thinking if not supported */
-    if(isSelfHosted && err.body && err.body.error &&
-       /does not support thinking/.test(err.body.error)){
-      log('Thinking unsupported – retrying with think=false', LOG_LEVELS.INFO);
-      try{
-        const resp = await sendRequest(isSelfHosted, false);
-        await streamNDJSON(resp, onContent, onThinking, ()=>{ showSpinner(false); log('--- Streaming finished (thinking=false) ---', LOG_LEVELS.INFO); });
-      }catch(e){
-        console.error(e);
-        log(`Retry failed – ${e.message||e}`, LOG_LEVELS.ERROR, e.stack);
+  if (type==='openai'){
+    try{
+      log('--- Sending request to OpenAI ---', LOG_LEVELS.DEBUG);
+      const resp = await sendRequest(isSelfHosted, false);
+      await streamNDJSON(resp, onContent, onThinking, createOnDone('--- OpenAI Stream Closed ---', contentBuf));
+    } catch(err) {
+      console.error(err);
+      log(`request returned error: ${err.message||err}`, LOG_LEVELS.ERROR);
+    }
+  } else if (type==='selfhosted') {
+    /* first attempt – think = true */
+    try{
+      log('--- Attempt 1: thinking=true ---', LOG_LEVELS.DEBUG);
+      const resp = await sendRequest(isSelfHosted, true);
+      await streamNDJSON(resp, onContent, onThinking, createOnDone('--- Ollama Stream Closed (thinking=true) ---', contentBuf));
+    }catch(err){
+      /* retry without thinking if not supported */
+      if(isSelfHosted && err.body && err.body.error &&
+        /does not support thinking/.test(err.body.error)){
+        log('Thinking unsupported – retrying with think=false', LOG_LEVELS.INFO);
+        try{
+          const resp = await sendRequest(isSelfHosted, false);
+          await streamNDJSON(resp, onContent, onThinking, createOnDone('--- Ollama Stream Closed (thinking=false) ---', contentBuf));
+        }catch(e){
+          console.error(e);
+          log(`Retry failed – ${e.message||e}`, LOG_LEVELS.ERROR, e.stack);
+          document.getElementById('results').innerHTML =
+            `<p class="text-red-600">Retry error: ${JSON.stringify(e.body||e, null, 2)}</p>`;
+          showSpinner(false);
+        }
+      }else{
+        console.error(err);
+        log(`Unhandled error: ${err.message||err}`, LOG_LEVELS.ERROR, err.stack);
         document.getElementById('results').innerHTML =
-          `<p class="text-red-600">Retry error: ${JSON.stringify(e.body||e, null, 2)}</p>`;
+          `<p class="text-red-600">Error: ${JSON.stringify(err.body||err, null, 2)}</p>`;
         showSpinner(false);
       }
-    }else{
-      console.error(err);
-      log(`Unhandled error: ${err.message||err}`, LOG_LEVELS.ERROR, err.stack);
-      document.getElementById('results').innerHTML =
-        `<p class="text-red-600">Error: ${JSON.stringify(err.body||err, null, 2)}</p>`;
-      showSpinner(false);
     }
   }
 });

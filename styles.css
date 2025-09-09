@@ -53,6 +53,9 @@ body{
 }
 @keyframes spin{to{transform:rotate(360deg)}}
 
+/* Spinner placement ---------------------------------------- */
+#spinner{margin:0 auto;display:none;}
+
 /* Log area --------------------------------------------------- */
 .log{
   background:#e2e8f0;
@@ -102,6 +105,3 @@ body{
   overflow-y:auto;
   max-height:140px;
 }
-
-/* Spinner placement ---------------------------------------- */
-#spinner{margin:0 auto;display:block;}

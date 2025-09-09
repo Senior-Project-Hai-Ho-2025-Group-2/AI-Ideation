@@ -52,13 +52,13 @@
       <!-- OpenAI API key -->
       <div id="apiKeyField" class="section hidden">
         <label class="block text-sm font-medium text-gray-700 mb-1">OpenAI API Key:</label>
-        <input type="text" id="apiKey" class="input" placeholder="sk-…" autocomplete="off">
+        <input type="text" id="apiKey" class="input" placeholder="sk-…" autocomplete="off" onblur="fetchModels()">
       </div>
 
       <!-- Self‑hosted URL -->
       <div id="urlField" class="section hidden">
         <label class="block text-sm font-medium text-gray-700 mb-1">Self‑Hosted Base URL:</label>
-        <input type="text" id="modelUrl" class="input" placeholder="http://192.168.1.10:11434" autocomplete="off" onblur="fetchModels()">
+        <input type="text" id="modelUrl" class="input" placeholder="http://localhost:11434" autocomplete="off" onblur="fetchModels()">
       </div>
 
       <!-- Model dropdown -->
