@@ -67,21 +67,21 @@ body{
   overflow:auto;
 }
 
-/* Results markdown styling ----------------------------------- */
-#results *, #thinkingLog *{
+/* resultsContainer markdown styling ----------------------------------- */
+#resultsContainer *{
   overflow-wrap:anywhere;
   word-break:break-word;
 }
-#results pre, #thinkingLog pre{
+#resultsContainer pre{
   white-space:pre-wrap;
   word-wrap:break-word;
   overflow-x:auto;
 }
-#results h1,#results h2,#results h3,#results h4,#results h5,#results h6{
+#resultsContainer h1,#resultsContainer h2,#resultsContainer h3,#resultsContainer h4,#resultsContainer h5,#resultsContainer h6{
   margin-top:1rem;margin-bottom:.5rem;
 }
-#results ul,#results ol{margin-left:1.25rem;margin-bottom:.75rem;}
-#results pre,#results code{
+#resultsContainer ul,#resultsContainer ol{margin-left:1.25rem;margin-bottom:.75rem;}
+#resultsContainer pre,#resultsContainer code{
   background:#f7fafc;
   border:1px solid #e2e8f0;
   padding:.5rem;
