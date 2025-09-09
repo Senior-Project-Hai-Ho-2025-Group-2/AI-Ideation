@@ -78,9 +78,35 @@ async function fetchModels(){
   }
 }
 
+/**
+ * Split a Markdown string into an array of sections.
+ * A section starts at a line that begins with `## ` (top‑level heading)
+ * and continues until the next heading.
+ *
+ * @param {string} mdText
+ * @returns {string[]} – array of Markdown sections
+ */
+function splitIntoIdeas(mdText) {
+  const lines = mdText.split('\n');
+  const sections = [];
+  let current = [];
+
+  for (const line of lines) {
+    if (/^##\s/.test(line)) {           // new top‑level heading
+      if (current.length) sections.push(current.join('\n'));
+      current = [line];                 // start new section
+    } else {
+      current.push(line);
+    }
+  }
+
+  if (current.length) sections.push(current.join('\n'));
+  return sections;
+}
+
 /* ------------  Prompt builder  ------------------- */
 function buildPrompt(params){
-  let prompt = `Generate 3 innovative senior design project ideas for computer engineering students with these specifications:
+  let prompt = `Generate ${params.numOfIdeas} innovative senior design project ideas for computer engineering students with these specifications:
 Team: 4 students, 2 semesters (8‑9 months)
 Budget: $${params.budget}
 Complexity: ${params.complexity}
@@ -104,7 +130,9 @@ Innovation Level: ${params.innovation}/10 (1=safe/proven, 10=cutting‑edge/risk
 8. **Challenges**: Main technical and implementation challenges
 9. **Unique Value**: What makes this project special/different
 Format each project clearly with headers and bullet points. 
-Use markdown to format your response.`;
+Use markdown to format your response. 
+Start each new project with a level 2 header (##).
+Only output the project ideas. Any extra information will be lost.`;
 
   return prompt;
 }
@@ -239,6 +267,7 @@ async function sendRequest(isSelfHosted, think){
   const model  = document.getElementById('modelSelect').value;
   const problem= document.getElementById('problem').value.trim();
   const budget = document.getElementById('budgetInput').value.trim();
+  const numOfIdeas = document.getElementById('numOfIdeas').value.trim();
 
   /* selected techs */
   const techs = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'))
@@ -249,6 +278,7 @@ async function sendRequest(isSelfHosted, think){
     problemStatement: problem,
     technologies: techs,
     budget,
+    numOfIdeas,
     complexity: document.getElementById('complexity').value
   };
   const prompt = buildPrompt(params);
@@ -335,8 +365,27 @@ document.getElementById('problemForm').addEventListener('submit', async e=>{
 
   /* helpers to update DOM */
   const renderResults = ()=>{ 
-    const html = marked.parse(contentBuf.join(''));
-    document.getElementById('results').innerHTML = html;
+    const mdText = contentBuf.join('');
+    const sections = splitIntoIdeas(mdText);   // array of Markdown strings
+
+    const resultsEl = document.getElementById('results');
+    resultsEl.innerHTML = '';                 // clear previous results
+
+    sections.forEach((section, idx) => {
+      const html = marked.parse(section);
+      const collapsible = `
+        <details open class="project-details mb-4 rounded-lg border border-gray-200">
+          <summary class="cursor-pointer bg-gray-100 px-4 py-2 font-medium text-indigo-600">
+            <i class="fas fa-caret-right mr-2"></i>
+            <span>Idea ${idx + 1}</span>
+          </summary>
+          <div class="p-4 bg-white">
+            ${html}
+          </div>
+        </details>
+      `;
+      resultsEl.insertAdjacentHTML('beforeend', collapsible);
+    });
   };
   const renderThinking = ()=>{
     const el = document.getElementById('thinkingLog');
