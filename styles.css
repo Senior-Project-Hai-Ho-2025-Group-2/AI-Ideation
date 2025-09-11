@@ -89,6 +89,105 @@ body{
   overflow-x:auto;
 }
 
+/* Idea selected – change card colour slightly */
+/* Global Box-Sizing Reset */
+*,
+*:after,
+*:before {
+	box-sizing: border-box;
+}
+
+/* Project Details Container */
+.project-details {
+	transition: border-color 0.15s ease;
+
+}
+
+/* Summary Style */
+.project-details > summary {
+	/*list-style: none; /* Hides the default disclosure triangle */
+	position: relative; /* Needed to position our custom checkmark */
+	padding-right: 3rem; /* Make space for the checkmark on the right */
+	cursor: pointer;
+	background-color: #f8fafc; /* Slightly different from bg-gray-100 */
+}
+
+.project-details > summary::-webkit-details-marker {
+	display: list-item; /* Hide default marker in Webkit browsers */
+}
+
+/* Hide Native Checkbox */
+.select-idea {
+	clip: rect(0 0 0 0);
+	clip-path: inset(100%);
+	height: 1px;
+	overflow: hidden;
+	position: absolute;
+	white-space: nowrap;
+	width: 1px;
+}
+
+/* Custom Checkmark - positioned on the right side of summary */
+.project-details > summary::after {
+	content: "";
+	position: absolute;
+	display: block;
+	right: 1rem;
+	top: 50%;
+	transform: translateY(-50%);
+	width: 1.25rem;
+	height: 1.25rem;
+	border: 2px solid #b5bfd9;
+	background-color: #fff;
+	border-radius: 50%;
+	opacity: 0;
+	transform: translateY(-50%) scale(0);
+	transition: 0.25s ease;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='192' height='192' fill='%23FFFFFF' viewBox='0 0 256 256'%3E%3Crect width='256' height='256' fill='none'%3E%3C/rect%3E%3Cpolyline points='216 72.005 104 184 48 128.005' fill='none' stroke='%23FFFFFF' stroke-linecap='round' stroke-linejoin='round' stroke-width='32'%3E%3C/polyline%3E%3C/svg%3E");
+	background-size: 12px;
+	background-repeat: no-repeat;
+	background-position: 50% 50%;
+	z-index: 10;
+}
+
+/* Show checkmark on summary hover */
+.project-details > summary:hover::after {
+	transform: translateY(-50%) scale(1);
+	opacity: 1;
+}
+
+/* When checkbox is checked - style the checkmark */
+.select-idea:checked + summary::after {
+	transform: translateY(-50%) scale(1);
+	opacity: 1;
+	background-color: #2260ff;
+	border-color: #2260ff;
+}
+
+/* When checkbox is checked - style the entire details element */
+.select-idea:checked ~ .bg-white,
+.select-idea:checked + summary {
+	border-color: #2260ff;
+}
+
+.select-idea:focus + summary::after {
+	transform: translateY(-50%) scale(1);
+	opacity: 1;
+	box-shadow: 0 0 0 4px #b5c9fc;
+}
+
+/* Content area styling */
+.project-details .bg-white {
+	border-top: 2px solid #b5bfd9;
+	transition: border-color 0.15s ease;
+}
+
+/* Thinking log styling */
+.thinkingLog {
+	font-family: monospace;
+	font-size: 0.875rem;
+	line-height: 1.5;
+}
 /* Thinking panel ------------------------------------------------ */
 .thinkingLog{
   opacity:.6;

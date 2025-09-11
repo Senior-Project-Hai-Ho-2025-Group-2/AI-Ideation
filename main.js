@@ -440,33 +440,63 @@ document.getElementById('problemForm').addEventListener('submit', async e=>{
     sections.forEach((section, idx) => {
       const html = marked.parse(section);
       const collapsible = `
-        <details open class="project-details mb-4 rounded-lg border border-gray-200">
-          <summary class="cursor-pointer bg-gray-100 px-4 py-2 font-medium text-indigo-600">
-            <span>Idea ${idx + 1}</span>
-          </summary>
-          <div class="p-4 bg-white">
-            ${html}
+<details open class="project-details mb-4 rounded-lg border border-gray-200">
+    <summary class="cursor-pointer bg-gray-100 px-4 py-2 font-medium text-indigo-600 justify-between items-center">
+        <span>Idea ${idx + 1}</span>
+        <!-- Checkbox - positioned for CSS sibling selector -->
+        <input type="checkbox"
+               class="select-idea"
+               data-idx="${idx}"
+               aria-label="Select Idea ${idx + 1}">
+    </summary>
+    <div class="p-4 bg-white">
+        ${html}
 
-            <!-- Market‑analysis button -->
-            <button class="btn btn-sm market-btn mt-3"
-                    data-project-id="${idx}"
-                    data-project="${section}">
-              <i class="fas fa-chart-line"></i> Market Analysis
-            </button>
+        <!-- Market-analysis button -->
+        <button class="btn btn-sm market-btn mt-3 bg-indigo-600 text-white px-3 py-1 rounded hover:bg-indigo-700 transition-colors"
+                data-project-id="${idx}"
+                data-project="${section}">
+            <i class="fas fa-chart-line mr-1"></i> Market Analysis
+        </button>
 
-            <!--  ←  container that will hold the analysis  -->
-            <!-- Thinking collapsible -->
-            <details id="thinkingContainer-${idx}" class="mt-4 border-t border-gray-200 pt-2 hidden">
-              <summary class="text-indigo-600 font-medium cursor-pointer">Thinking</summary>
-              <pre id="thinkingLog-${idx}" class="thinkingLog mt-2 bg-gray-50 rounded p-3 overflow-y-auto" style="height:140px;"></pre>
-            </details>
-            <div id="market-${idx}" class="market-analysis my-4"></div>
-          </div>
+        <!-- Thinking collapsible -->
+        <details id="thinkingContainer-${idx}" class="mt-4 border-t border-gray-200 pt-2 hidden">
+            <summary class="text-indigo-600 font-medium cursor-pointer">Thinking Process</summary>
+            <pre id="thinkingLog-${idx}" class="thinkingLog mt-2 bg-gray-50 rounded p-3 overflow-y-auto max-h-40"></pre>
         </details>
-      `;
+        
+        <!-- Market analysis results container -->
+        <div id="market-${idx}" class="market-analysis my-4"></div>
+    </div>
+</details>`;
       resultsEl.insertAdjacentHTML('beforeend', collapsible);
     });
   };
+  /* ----  Listen for checkbox changes  ---- */
+  // Add event listener to stop propagation on checkbox clicks
+  document.addEventListener('click', function(e) {
+      if (e.target.classList.contains('select-idea')) {
+          e.stopPropagation();
+      }
+  });
+  document.getElementById('results').addEventListener('click', e=>{
+    if (!e.target.matches('.select-idea')) return;
+
+    const idx = e.target.dataset.idx;
+    const card = e.target.closest('.project-details');
+
+    // Toggle visual state
+    card.classList.toggle('selected', e.target.checked);
+
+    // Optional: keep a JS set of selected indices
+    if (e.target.checked){
+      selectedIdeas.add(parseInt(idx));
+    } else {
+      selectedIdeas.delete(parseInt(idx));
+    }
+  });
+  /* ----  Optional: keep a global set of selected IDs  ---- */
+  const selectedIdeas = new Set();   // e.g. to build a “Download Selected” button
   // Market Analysis button listener
   document.getElementById('results').addEventListener('click', e => {
     if (!e.target.matches('.market-btn')) return;
